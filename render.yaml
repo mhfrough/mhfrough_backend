@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: mhfrough-backend
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: node dist/main
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3032
+      - key: DB_HOST
+        fromDatabase:
+          name: mhfrough-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: mhfrough-db
+          property: port
+      - key: DB_USERNAME
+        fromDatabase:
+          name: mhfrough-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: mhfrough-db
+          property: password
+      - key: DB_NAME
+        fromDatabase:
+          name: mhfrough-db
+          property: database
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: COOKIE_SECRET
+        sync: false
+      - key: CORS_ORIGIN
+        value: https://mhfrough-frontend.onrender.com
+
+databases:
+  - name: mhfrough-db
+    databaseName: mhfrough_db
+    plan: free
+    region: oregon
