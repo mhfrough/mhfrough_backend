@@ -25,6 +25,7 @@ export class InquiriesService {
 
     async markRead(id: string): Promise<Inquiry | null> {
         await this.repo.update(id, { status: InquiryStatus.READ });
+        this.notifications.emit('inquiry_updated');
         return this.repo.findOne({ where: { id } });
     }
 

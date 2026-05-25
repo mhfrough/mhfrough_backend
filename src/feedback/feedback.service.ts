@@ -29,6 +29,7 @@ export class FeedbackService {
 
     async approve(id: string): Promise<Feedback | null> {
         await this.repo.update(id, { isApproved: true });
+        this.notifications.emit('feedback_updated');
         return this.repo.findOne({ where: { id } });
     }
 
@@ -36,10 +37,12 @@ export class FeedbackService {
         const update: Partial<Feedback> = { isApproved: false };
         if (adminNote !== undefined) update.adminNote = adminNote;
         await this.repo.update(id, update);
+        this.notifications.emit('feedback_updated');
         return this.repo.findOne({ where: { id } });
     }
 
     async remove(id: string): Promise<void> {
         await this.repo.delete(id);
+        this.notifications.emit('feedback_updated');
     }
 }

@@ -46,7 +46,9 @@ export class BlogCommentsService {
         const comment = await this.repo.findOneBy({ id });
         if (!comment) throw new NotFoundException('Comment not found');
         comment.isApproved = true;
-        return this.repo.save(comment);
+        const saved = await this.repo.save(comment);
+        this.notifications.emit('comment_updated');
+        return saved;
     }
 
     async unapprove(id: string, adminNote?: string): Promise<BlogComment> {
@@ -54,10 +56,13 @@ export class BlogCommentsService {
         if (!comment) throw new NotFoundException('Comment not found');
         comment.isApproved = false;
         if (adminNote !== undefined) comment.adminNote = adminNote;
-        return this.repo.save(comment);
+        const saved = await this.repo.save(comment);
+        this.notifications.emit('comment_updated');
+        return saved;
     }
 
     async remove(id: string): Promise<void> {
         await this.repo.delete(id);
+        this.notifications.emit('comment_updated');
     }
 }

@@ -1,7 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { Subject } from 'rxjs';
 
-export type NotificationEventType = 'new_inquiry' | 'new_feedback' | 'new_comment';
+export type NotificationEventType =
+    | 'new_inquiry'
+    | 'new_feedback'
+    | 'new_comment'
+    | 'feedback_updated'
+    | 'comment_updated'
+    | 'inquiry_updated';
 
 export interface AdminStreamEvent {
     type: NotificationEventType;
