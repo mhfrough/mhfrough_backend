@@ -8,41 +8,41 @@ import { Throttle } from '@nestjs/throttler';
 @ApiTags('Feedback')
 @Controller('feedback')
 export class FeedbackController {
-  constructor(private readonly service: FeedbackService) {}
+    constructor(private readonly service: FeedbackService) { }
 
-  @Get()
-  @ApiOperation({ summary: 'Get approved feedback/reviews' })
-  findApproved() {
-    return this.service.findApproved();
-  }
+    @Get()
+    @ApiOperation({ summary: 'Get approved feedback/reviews' })
+    findApproved() {
+        return this.service.findApproved();
+    }
 
-  @Post()
-  @HttpCode(201)
-  @Throttle({ default: { ttl: 60000, limit: 2 } })
-  @ApiOperation({ summary: 'Submit a review/feedback' })
-  create(@Body() dto: CreateFeedbackDto) {
-    return this.service.create(dto);
-  }
+    @Post()
+    @HttpCode(201)
+    @Throttle({ default: { ttl: 60000, limit: 2 } })
+    @ApiOperation({ summary: 'Submit a review/feedback' })
+    create(@Body() dto: CreateFeedbackDto) {
+        return this.service.create(dto);
+    }
 
-  @Get('all')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '[Admin] Get all feedback' })
-  findAll() {
-    return this.service.findAll();
-  }
+    @Get('all')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: '[Admin] Get all feedback' })
+    findAll() {
+        return this.service.findAll();
+    }
 
-  @Patch(':id/approve')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  approve(@Param('id') id: string) {
-    return this.service.approve(id);
-  }
+    @Patch(':id/approve')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    approve(@Param('id') id: string) {
+        return this.service.approve(id);
+    }
 
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
-  }
+    @Delete(':id')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    remove(@Param('id') id: string) {
+        return this.service.remove(id);
+    }
 }

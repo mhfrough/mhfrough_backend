@@ -5,18 +5,18 @@ import { User } from './user.entity';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectRepository(User) private readonly repo: Repository<User>) {}
+    constructor(@InjectRepository(User) private readonly repo: Repository<User>) { }
 
-  findByEmail(email: string): Promise<User | null> {
-    return this.repo.findOne({ where: { email } });
-  }
+    findByEmail(email: string): Promise<User | null> {
+        return this.repo.findOne({ where: { email } });
+    }
 
-  findById(id: string): Promise<User | null> {
-    return this.repo.findOne({ where: { id } });
-  }
+    findById(id: string): Promise<User | null> {
+        return this.repo.findOne({ where: { id } });
+    }
 
-  create(email: string, passwordHash: string): Promise<User> {
-    const user = this.repo.create({ email, passwordHash });
-    return this.repo.save(user);
-  }
+    create(email: string, passwordHash: string): Promise<User> {
+        const user = this.repo.create({ email, passwordHash });
+        return this.repo.save(user);
+    }
 }

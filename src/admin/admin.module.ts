@@ -5,9 +5,13 @@ import { Project } from '../projects/project.entity';
 import { Blog } from '../blogs/blog.entity';
 import { Inquiry } from '../inquiries/inquiry.entity';
 import { Feedback } from '../feedback/feedback.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Project, Blog, Inquiry, Feedback])],
-  controllers: [AdminController],
+    imports: [
+        TypeOrmModule.forFeature([Project, Blog, Inquiry, Feedback]),
+        NotificationsModule,
+    ],
+    controllers: [AdminController],
 })
-export class AdminModule {}
+export class AdminModule { }

@@ -9,29 +9,29 @@ import { Throttle } from '@nestjs/throttler';
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+    constructor(private readonly authService: AuthService) { }
 
-  @Post('login')
-  @HttpCode(200)
-  @Throttle({ default: { ttl: 60000, limit: 5 } })
-  @ApiOperation({ summary: 'Admin login' })
-  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
-    const user = await this.authService.validateUser(dto.email, dto.password);
-    return this.authService.login(user, res);
-  }
+    @Post('login')
+    @HttpCode(200)
+    @Throttle({ default: { ttl: 60000, limit: 5 } })
+    @ApiOperation({ summary: 'Admin login' })
+    async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+        const user = await this.authService.validateUser(dto.email, dto.password);
+        return this.authService.login(user, res);
+    }
 
-  @Post('logout')
-  @HttpCode(200)
-  @ApiOperation({ summary: 'Logout and clear cookie' })
-  logout(@Res({ passthrough: true }) res: Response) {
-    return this.authService.logout(res);
-  }
+    @Post('logout')
+    @HttpCode(200)
+    @ApiOperation({ summary: 'Logout and clear cookie' })
+    logout(@Res({ passthrough: true }) res: Response) {
+        return this.authService.logout(res);
+    }
 
-  @Get('profile')
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get logged-in admin profile' })
-  profile(@Req() req: Request & { user: any }) {
-    return this.authService.profile(req.user.id);
-  }
+    @Get('profile')
+    @UseGuards(AuthGuard('jwt'))
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Get logged-in admin profile' })
+    profile(@Req() req: Request & { user: any }) {
+        return this.authService.profile(req.user.id);
+    }
 }

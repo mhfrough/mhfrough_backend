@@ -2,33 +2,33 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeor
 
 @Entity('feedback')
 export class Feedback {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
-  @Column()
-  name: string;
+    @Column()
+    name: string;
 
-  @Column({ nullable: true })
-  company: string;
+    @Column({ nullable: true })
+    company: string;
 
-  @Column({ nullable: true })
-  role: string;
+    @Column({ nullable: true })
+    role: string;
 
-  @Column({ type: 'text' })
-  review: string;
+    @Column({ type: 'text' })
+    review: string;
 
-  @Column({ type: 'int', default: 5 })
-  rating: number;
+    @Column({ type: 'int', default: 5 })
+    rating: number;
 
-  @Column({ nullable: true })
-  avatarUrl: string;
+    @Column({ nullable: true })
+    avatarUrl: string;
 
-  @Column({ default: false })
-  isApproved: boolean;
+    @Column({ default: false })
+    isApproved: boolean;
 
-  @Column({ default: true })
-  showOnSite: boolean;
+    @Column({ default: true })
+    showOnSite: boolean;
 
-  @CreateDateColumn()
-  createdAt: Date;
+    @CreateDateColumn()
+    createdAt: Date;
 }
