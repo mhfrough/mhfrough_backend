@@ -35,6 +35,9 @@ export class Project {
     @Column({ default: true })
     isPublished: boolean;
 
+    @Column({ nullable: true, type: 'text' })
+    adminNote: string;
+
     @CreateDateColumn()
     createdAt: Date;
 

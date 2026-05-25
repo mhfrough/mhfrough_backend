@@ -45,6 +45,18 @@ export class CreateProjectDto {
     @IsOptional()
     @IsBoolean()
     isPublished?: boolean;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    adminNote?: string;
 }
 
 export class UpdateProjectDto extends CreateProjectDto { }
+
+export class UnpublishProjectDto {
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    adminNote?: string;
+}

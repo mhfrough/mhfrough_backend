@@ -38,6 +38,18 @@ export class CreateBlogDto {
     @IsOptional()
     @IsBoolean()
     isPublished?: boolean;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    adminNote?: string;
 }
 
 export class UpdateBlogDto extends CreateBlogDto { }
+
+export class UnpublishBlogDto {
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    adminNote?: string;
+}

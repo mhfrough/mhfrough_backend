@@ -9,6 +9,7 @@ import { BlogsModule } from './blogs/blogs.module';
 import { InquiriesModule } from './inquiries/inquiries.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { AdminModule } from './admin/admin.module';
+import { BlogCommentsModule } from './blog-comments/blog-comments.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { AdminModule } from './admin/admin.module';
     InquiriesModule,
     FeedbackModule,
     AdminModule,
+    BlogCommentsModule,
   ],
 })
 export class AppModule { }

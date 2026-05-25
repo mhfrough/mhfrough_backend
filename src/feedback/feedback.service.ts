@@ -32,6 +32,13 @@ export class FeedbackService {
         return this.repo.findOne({ where: { id } });
     }
 
+    async unapprove(id: string, adminNote?: string): Promise<Feedback | null> {
+        const update: Partial<Feedback> = { isApproved: false };
+        if (adminNote !== undefined) update.adminNote = adminNote;
+        await this.repo.update(id, update);
+        return this.repo.findOne({ where: { id } });
+    }
+
     async remove(id: string): Promise<void> {
         await this.repo.delete(id);
     }

@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Delete, Patch, Param, Body, UseGuards, HttpCode } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { FeedbackService } from './feedback.service';
-import { CreateFeedbackDto } from './dto/feedback.dto';
+import { CreateFeedbackDto, UnapproveDto } from './dto/feedback.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Throttle } from '@nestjs/throttler';
 
@@ -37,6 +37,13 @@ export class FeedbackController {
     @ApiBearerAuth()
     approve(@Param('id') id: string) {
         return this.service.approve(id);
+    }
+
+    @Patch(':id/unapprove')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    unapprove(@Param('id') id: string, @Body() dto: UnapproveDto) {
+        return this.service.unapprove(id, dto.adminNote);
     }
 
     @Delete(':id')

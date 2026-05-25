@@ -1,10 +1,10 @@
 import {
-    Controller, Get, Post, Put, Delete,
+    Controller, Get, Post, Put, Patch, Delete,
     Param, Body, UseGuards, ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ProjectsService } from './projects.service';
-import { CreateProjectDto, UpdateProjectDto } from './dto/project.dto';
+import { CreateProjectDto, UpdateProjectDto, UnpublishProjectDto } from './dto/project.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('Projects')
@@ -43,6 +43,13 @@ export class ProjectsController {
     @ApiBearerAuth()
     update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateProjectDto) {
         return this.service.update(id, dto);
+    }
+
+    @Patch(':id/unpublish')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    unpublish(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UnpublishProjectDto) {
+        return this.service.unpublish(id, dto.adminNote);
     }
 
     @Delete(':id')

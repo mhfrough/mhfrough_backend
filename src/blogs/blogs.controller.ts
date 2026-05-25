@@ -1,10 +1,10 @@
 import {
-    Controller, Get, Post, Put, Delete,
+    Controller, Get, Post, Put, Patch, Delete,
     Param, Body, UseGuards, ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { BlogsService } from './blogs.service';
-import { CreateBlogDto, UpdateBlogDto } from './dto/blog.dto';
+import { CreateBlogDto, UpdateBlogDto, UnpublishBlogDto } from './dto/blog.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('Blogs')
@@ -43,6 +43,13 @@ export class BlogsController {
     @ApiBearerAuth()
     update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateBlogDto) {
         return this.service.update(id, dto);
+    }
+
+    @Patch(':id/unpublish')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    unpublish(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UnpublishBlogDto) {
+        return this.service.unpublish(id, dto.adminNote);
     }
 
     @Delete(':id')

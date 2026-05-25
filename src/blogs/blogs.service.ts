@@ -38,6 +38,13 @@ export class BlogsService {
         return this.repo.save(blog);
     }
 
+    async unpublish(id: string, adminNote?: string): Promise<Blog> {
+        const blog = await this.findOne(id);
+        blog.isPublished = false;
+        if (adminNote !== undefined) blog.adminNote = adminNote;
+        return this.repo.save(blog);
+    }
+
     async remove(id: string): Promise<void> {
         const blog = await this.findOne(id);
         await this.repo.remove(blog);

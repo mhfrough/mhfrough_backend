@@ -30,3 +30,10 @@ export class CreateFeedbackDto {
     @Max(5)
     rating: number;
 }
+
+export class UnapproveDto {
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    adminNote?: string;
+}

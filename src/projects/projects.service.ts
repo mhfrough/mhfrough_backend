@@ -30,6 +30,13 @@ export class ProjectsService {
         return this.repo.save(project);
     }
 
+    async unpublish(id: string, adminNote?: string): Promise<Project> {
+        const project = await this.findOne(id);
+        project.isPublished = false;
+        if (adminNote !== undefined) project.adminNote = adminNote;
+        return this.repo.save(project);
+    }
+
     async remove(id: string): Promise<void> {
         const project = await this.findOne(id);
         await this.repo.remove(project);

@@ -32,6 +32,9 @@ export class Blog {
     @Column({ default: false })
     isPublished: boolean;
 
+    @Column({ nullable: true, type: 'text' })
+    adminNote: string;
+
     @Column({ nullable: true, type: 'timestamp' })
     publishedAt: Date;
 
