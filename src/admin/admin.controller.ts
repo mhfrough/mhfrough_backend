@@ -1,5 +1,5 @@
-import { Controller, Get, UseGuards, Sse } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, UseGuards, Sse, Query, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Observable } from 'rxjs';
@@ -11,6 +11,9 @@ import { Inquiry, InquiryStatus } from '../inquiries/inquiry.entity';
 import { Feedback } from '../feedback/feedback.entity';
 import { BlogComment } from '../blog-comments/blog-comment.entity';
 import { NotificationsService } from '../notifications/notifications.service';
+import { FcmService } from '../fcm/fcm.service';
+import { PushNotifSource } from '../fcm/push-notification-log.entity';
+import { SendPushNotificationDto } from '../fcm/dto/fcm.dto';
 
 @ApiTags('Admin')
 @Controller('admin')
@@ -24,6 +27,7 @@ export class AdminController {
         @InjectRepository(Feedback) private feedback: Repository<Feedback>,
         @InjectRepository(BlogComment) private comments: Repository<BlogComment>,
         private readonly notifications: NotificationsService,
+        private readonly fcm: FcmService,
     ) { }
 
     @Get('dashboard')
@@ -71,5 +75,24 @@ export class AdminController {
         return this.notifications.getStream().pipe(
             map(event => ({ data: event }) as MessageEvent),
         );
+    }
+
+    @Post('push/send')
+    @ApiOperation({ summary: 'Send a manual push notification to all subscribers' })
+    async sendPush(@Body() dto: SendPushNotificationDto) {
+        await this.fcm.sendPush({
+            title: dto.title,
+            body: dto.body,
+            url: dto.url,
+            source: PushNotifSource.ADMIN,
+        });
+        return { message: 'Push notification queued' };
+    }
+
+    @Get('push/logs')
+    @ApiOperation({ summary: 'Get push notification logs' })
+    @ApiQuery({ name: 'limit', required: false, type: Number })
+    getLogs(@Query('limit', new DefaultValuePipe(100), ParseIntPipe) limit: number) {
+        return this.fcm.getLogs(limit);
     }
 }

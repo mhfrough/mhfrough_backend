@@ -10,6 +10,10 @@ import { InquiriesModule } from './inquiries/inquiries.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { AdminModule } from './admin/admin.module';
 import { BlogCommentsModule } from './blog-comments/blog-comments.module';
+import { FcmModule } from './fcm/fcm.module';
+import { ChatModule } from './chat/chat.module';
+import { EventsModule } from './events/events.module';
+import { InvoicesModule } from './invoices/invoices.module';
 
 @Module({
   imports: [
@@ -38,6 +42,10 @@ import { BlogCommentsModule } from './blog-comments/blog-comments.module';
     FeedbackModule,
     AdminModule,
     BlogCommentsModule,
+    ChatModule,
+    FcmModule,
+    EventsModule,
+    InvoicesModule,
   ],
 })
 export class AppModule { }

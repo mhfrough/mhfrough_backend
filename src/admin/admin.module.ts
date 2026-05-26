@@ -7,11 +7,13 @@ import { Inquiry } from '../inquiries/inquiry.entity';
 import { Feedback } from '../feedback/feedback.entity';
 import { BlogComment } from '../blog-comments/blog-comment.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { FcmModule } from '../fcm/fcm.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Project, Blog, Inquiry, Feedback, BlogComment]),
         NotificationsModule,
+        FcmModule,
     ],
     controllers: [AdminController],
 })

@@ -4,9 +4,11 @@ import { BlogComment } from './blog-comment.entity';
 import { BlogCommentsService } from './blog-comments.service';
 import { BlogCommentsController } from './blog-comments.controller';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { FcmModule } from '../fcm/fcm.module';
+import { EventsModule } from '../events/events.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([BlogComment]), NotificationsModule],
+    imports: [TypeOrmModule.forFeature([BlogComment]), NotificationsModule, FcmModule, EventsModule],
     controllers: [BlogCommentsController],
     providers: [BlogCommentsService],
     exports: [BlogCommentsService],
