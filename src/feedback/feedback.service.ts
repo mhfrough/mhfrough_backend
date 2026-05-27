@@ -7,6 +7,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { FcmService } from '../fcm/fcm.service';
 import { PushNotifSource } from '../fcm/push-notification-log.entity';
 import { EventsGateway } from '../events/events.gateway';
+import { ActivityLogService } from '../activity-log/activity-log.service';
 
 @Injectable()
 export class FeedbackService {
@@ -15,6 +16,7 @@ export class FeedbackService {
         private readonly notifications: NotificationsService,
         private readonly fcm: FcmService,
         private readonly events: EventsGateway,
+        private readonly activityLog: ActivityLogService,
     ) { }
 
     findApproved(): Promise<Feedback[]> {
@@ -36,6 +38,13 @@ export class FeedbackService {
             url: '/admin/feedback',
             source: PushNotifSource.FEEDBACK,
         });
+        this.activityLog.log({
+            action: 'feedback:received',
+            resource: 'feedback',
+            resourceId: saved.id,
+            resourceTitle: dto.name,
+            description: `${dto.name} · ${dto.rating}★`,
+        });
         return saved;
     }
 
@@ -43,8 +52,16 @@ export class FeedbackService {
         await this.repo.update(id, { isApproved: true });
         this.notifications.emit('feedback_updated');
         const feedback = await this.repo.findOne({ where: { id } });
-        // emit to all: admin list updates + public reviews page shows the new review
-        if (feedback) this.events.emitToAll('feedback:approved', feedback);
+        if (feedback) {
+            this.events.emitToAll('feedback:approved', feedback);
+            this.activityLog.log({
+                action: 'feedback:approve',
+                resource: 'feedback',
+                resourceId: id,
+                resourceTitle: feedback.name,
+                description: feedback.name,
+            });
+        }
         return feedback;
     }
 
@@ -54,12 +71,28 @@ export class FeedbackService {
         await this.repo.update(id, update);
         this.notifications.emit('feedback_updated');
         this.events.emitToAll('feedback:unapproved', { id });
-        return this.repo.findOne({ where: { id } });
+        const feedback = await this.repo.findOne({ where: { id } });
+        this.activityLog.log({
+            action: 'feedback:disapprove',
+            resource: 'feedback',
+            resourceId: id,
+            resourceTitle: feedback?.name,
+            description: feedback?.name ?? '—',
+        });
+        return feedback;
     }
 
     async remove(id: string): Promise<void> {
+        const feedback = await this.repo.findOne({ where: { id } });
         await this.repo.delete(id);
         this.notifications.emit('feedback_updated');
         this.events.emitToAll('feedback:deleted', { id });
+        this.activityLog.log({
+            action: 'feedback:delete',
+            resource: 'feedback',
+            resourceId: id,
+            resourceTitle: feedback?.name,
+            description: feedback?.name ?? '—',
+        });
     }
 }

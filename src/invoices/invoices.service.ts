@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Invoice } from './invoice.entity';
 import { InvoiceItem } from './invoice-item.entity';
 import { CreateInvoiceDto, UpdateInvoiceDto } from './dto/invoice.dto';
+import { ActivityLogService } from '../activity-log/activity-log.service';
 
 @Injectable()
 export class InvoicesService {
@@ -12,6 +13,7 @@ export class InvoicesService {
         private readonly invoiceRepo: Repository<Invoice>,
         @InjectRepository(InvoiceItem)
         private readonly itemRepo: Repository<InvoiceItem>,
+        private readonly activityLog: ActivityLogService,
     ) { }
 
     findAll(): Promise<Invoice[]> {
@@ -53,7 +55,15 @@ export class InvoicesService {
             status: dto.status ?? 'draft',
         });
 
-        return this.invoiceRepo.save(invoice);
+        const saved = await this.invoiceRepo.save(invoice);
+        this.activityLog.log({
+            action: 'invoice:create',
+            resource: 'invoice',
+            resourceId: saved.id,
+            resourceTitle: saved.invoiceNumber,
+            description: `${saved.invoiceNumber} · ${saved.clientName}`,
+        });
+        return saved;
     }
 
     async update(id: string, dto: UpdateInvoiceDto): Promise<Invoice> {
@@ -87,12 +97,29 @@ export class InvoicesService {
             total,
         });
 
-        return this.invoiceRepo.save(inv);
+        const saved = await this.invoiceRepo.save(inv);
+        this.activityLog.log({
+            action: 'invoice:update',
+            resource: 'invoice',
+            resourceId: saved.id,
+            resourceTitle: saved.invoiceNumber,
+            description: `${saved.invoiceNumber} · $${saved.total}`,
+        });
+        return saved;
     }
 
     async remove(id: string): Promise<void> {
         const inv = await this.findOne(id);
+        const invoiceNumber = inv.invoiceNumber;
+        const clientName = inv.clientName;
         await this.invoiceRepo.remove(inv);
+        this.activityLog.log({
+            action: 'invoice:delete',
+            resource: 'invoice',
+            resourceId: id,
+            resourceTitle: invoiceNumber,
+            description: `${invoiceNumber} · ${clientName}`,
+        });
     }
 
     private async generateInvoiceNumber(): Promise<string> {

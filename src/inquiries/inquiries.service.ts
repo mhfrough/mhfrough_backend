@@ -7,6 +7,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { FcmService } from '../fcm/fcm.service';
 import { PushNotifSource } from '../fcm/push-notification-log.entity';
 import { EventsGateway } from '../events/events.gateway';
+import { ActivityLogService } from '../activity-log/activity-log.service';
 
 @Injectable()
 export class InquiriesService {
@@ -15,6 +16,7 @@ export class InquiriesService {
         private readonly notifications: NotificationsService,
         private readonly fcm: FcmService,
         private readonly events: EventsGateway,
+        private readonly activityLog: ActivityLogService,
     ) { }
 
     findAll(): Promise<Inquiry[]> {
@@ -32,6 +34,13 @@ export class InquiriesService {
             url: '/admin/inquiries',
             source: PushNotifSource.INQUIRY,
         });
+        this.activityLog.log({
+            action: 'inquiry:received',
+            resource: 'inquiry',
+            resourceId: saved.id,
+            resourceTitle: dto.name,
+            description: `${dto.name} <${dto.email}>`,
+        });
         return saved;
     }
 
@@ -39,8 +48,31 @@ export class InquiriesService {
         await this.repo.update(id, { status: InquiryStatus.READ });
         this.notifications.emit('inquiry_updated');
         const inquiry = await this.repo.findOne({ where: { id } });
-        if (inquiry) this.events.emitToAdmin('inquiry:read', { id, status: inquiry.status });
+        if (inquiry) {
+            this.events.emitToAdmin('inquiry:read', { id, status: inquiry.status });
+            this.activityLog.log({
+                action: 'inquiry:read',
+                resource: 'inquiry',
+                resourceId: id,
+                resourceTitle: inquiry.name,
+                description: inquiry.name,
+            });
+        }
         return inquiry;
+    }
+
+    async remove(id: string): Promise<void> {
+        const inquiry = await this.repo.findOne({ where: { id } });
+        await this.repo.delete(id);
+        this.notifications.emit('inquiry_updated');
+        this.events.emitToAdmin('inquiry:deleted', { id });
+        this.activityLog.log({
+            action: 'inquiry:delete',
+            resource: 'inquiry',
+            resourceId: id,
+            resourceTitle: inquiry?.name,
+            description: inquiry?.name ?? '—',
+        });
     }
 
     async stats() {

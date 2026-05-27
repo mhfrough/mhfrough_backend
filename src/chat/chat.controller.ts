@@ -4,11 +4,15 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ChatService } from './chat.service';
+import { ChatGateway } from './chat.gateway';
 import { UpdateSettingsDto } from './dto/chat.dto';
 
 @Controller('chat')
 export class ChatController {
-    constructor(private readonly chatService: ChatService) { }
+    constructor(
+        private readonly chatService: ChatService,
+        private readonly chatGateway: ChatGateway,
+    ) { }
 
     // ─── Public ───────────────────────────────────────────────────────────────
 
@@ -42,8 +46,9 @@ export class ChatController {
     @UseGuards(JwtAuthGuard)
     @Delete('sessions/:id')
     @HttpCode(HttpStatus.NO_CONTENT)
-    deleteSession(@Param('id') id: string) {
-        return this.chatService.deleteSession(id);
+    async deleteSession(@Param('id') id: string) {
+        await this.chatService.deleteSession(id);
+        await this.chatGateway.emitSessionDeleted(id);
     }
 
     @UseGuards(JwtAuthGuard)

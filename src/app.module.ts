@@ -14,6 +14,7 @@ import { FcmModule } from './fcm/fcm.module';
 import { ChatModule } from './chat/chat.module';
 import { EventsModule } from './events/events.module';
 import { InvoicesModule } from './invoices/invoices.module';
+import { ActivityLogModule } from './activity-log/activity-log.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { InvoicesModule } from './invoices/invoices.module';
     FcmModule,
     EventsModule,
     InvoicesModule,
+    ActivityLogModule,
   ],
 })
 export class AppModule { }

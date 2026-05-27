@@ -7,6 +7,7 @@ import { EventsGateway } from '../events/events.gateway';
 import { NotificationsService } from '../notifications/notifications.service';
 import { FcmService } from '../fcm/fcm.service';
 import { PushNotifSource } from '../fcm/push-notification-log.entity';
+import { ActivityLogService } from '../activity-log/activity-log.service';
 
 @Injectable()
 export class ProjectsService {
@@ -15,6 +16,7 @@ export class ProjectsService {
         private readonly events: EventsGateway,
         private readonly notifications: NotificationsService,
         private readonly fcm: FcmService,
+        private readonly activityLog: ActivityLogService,
     ) { }
 
     findAll(publishedOnly = true): Promise<Project[]> {
@@ -39,6 +41,13 @@ export class ProjectsService {
                 url: '/',
                 source: PushNotifSource.INQUIRY,
             });
+            this.activityLog.log({
+                action: 'project:create',
+                resource: 'project',
+                resourceId: p.id,
+                resourceTitle: p.title,
+                description: p.title,
+            });
         });
         return saved;
     }
@@ -48,6 +57,13 @@ export class ProjectsService {
         Object.assign(project, dto);
         const saved = await this.repo.save(project);
         this.events.emitToAll('project:updated', saved);
+        this.activityLog.log({
+            action: 'project:update',
+            resource: 'project',
+            resourceId: saved.id,
+            resourceTitle: saved.title,
+            description: saved.title,
+        });
         return saved;
     }
 
@@ -57,12 +73,27 @@ export class ProjectsService {
         if (adminNote !== undefined) project.adminNote = adminNote;
         const saved = await this.repo.save(project);
         this.events.emitToAll('project:unpublished', { id: saved.id });
+        this.activityLog.log({
+            action: 'project:unpublish',
+            resource: 'project',
+            resourceId: saved.id,
+            resourceTitle: saved.title,
+            description: saved.title,
+        });
         return saved;
     }
 
     async remove(id: string): Promise<void> {
         const project = await this.findOne(id);
+        const title = project.title;
         await this.repo.remove(project);
         this.events.emitToAll('project:deleted', { id });
+        this.activityLog.log({
+            action: 'project:delete',
+            resource: 'project',
+            resourceId: id,
+            resourceTitle: title,
+            description: title,
+        });
     }
 }

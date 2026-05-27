@@ -62,7 +62,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             ? await this.chatService.getSession(payload.sessionId)
             : null;
 
-        if (!session) {
+        // Don't reuse a closed session — always create a fresh one
+        if (!session || session.status === 'closed') {
             session = await this.chatService.createSession(payload.visitorName ?? 'Visitor');
         }
 
@@ -154,8 +155,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
         const msg = await this.chatService.saveMessage(payload.sessionId, payload.content, 'admin');
 
-        // deliver to visitor in that session room
-        this.server.to(`session:${payload.sessionId}`).emit('message:new', msg);
+        // deliver to visitor and other admins watching — exclude the sending admin socket
+        client.to(`session:${payload.sessionId}`).emit('message:new', msg);
 
         return msg;
     }
@@ -179,5 +180,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.server.to(`session:${payload.sessionId}`).emit('session:closed', { sessionId: payload.sessionId });
         const sessions = await this.chatService.getAllSessions();
         this.server.to('admins').emit('sessions:update', sessions);
+    }
+
+    /** Called by the HTTP controller after a session is hard-deleted. */
+    async emitSessionDeleted(sessionId: string): Promise<void> {
+        // Tell visitor in that session room their session is gone
+        this.server.to(`session:${sessionId}`).emit('session:deleted', { sessionId });
+        // Update admin sessions list (deleted session will no longer appear)
+        const sessions = await this.chatService.getAllSessions();
+        this.server.to('admins').emit('sessions:update', sessions);
+        // Tell admins explicitly so they can clear active state
+        this.server.to('admins').emit('session:deleted', { sessionId });
     }
 }

@@ -12,6 +12,6 @@ import { FcmModule } from '../fcm/fcm.module';
     imports: [TypeOrmModule.forFeature([ChatSession, ChatMessage, ChatSetting]), FcmModule],
     providers: [ChatService, ChatGateway],
     controllers: [ChatController],
-    exports: [ChatService],
+    exports: [ChatService, ChatGateway],
 })
 export class ChatModule { }

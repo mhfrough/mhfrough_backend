@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import * as admin from 'firebase-admin';
 import { FcmToken } from './fcm-token.entity';
 import { PushNotificationLog, PushNotifSource, PushNotifStatus } from './push-notification-log.entity';
+import { ActivityLogService } from '../activity-log/activity-log.service';
 
 export interface PushPayload {
     title: string;
@@ -22,6 +23,7 @@ export class FcmService implements OnModuleInit {
         private readonly config: ConfigService,
         @InjectRepository(FcmToken) private readonly tokenRepo: Repository<FcmToken>,
         @InjectRepository(PushNotificationLog) private readonly logRepo: Repository<PushNotificationLog>,
+        private readonly activityLog: ActivityLogService,
     ) { }
 
     onModuleInit() {
@@ -63,6 +65,14 @@ export class FcmService implements OnModuleInit {
     async sendPush(payload: PushPayload): Promise<void> {
         if (!this.app) {
             this.logger.warn('Firebase not initialized — skipping push notification');
+            await this.log(payload, PushNotifStatus.SKIPPED, 0, 0, 'Firebase not configured');
+            this.activityLog.log({
+                action: 'push:skipped',
+                resource: 'push',
+                description: payload.title,
+                status: 'error',
+                errorMessage: 'Firebase not configured',
+            });
             return;
         }
 
@@ -122,10 +132,23 @@ export class FcmService implements OnModuleInit {
             }
 
             await this.log(payload, status, response.successCount, failed.length);
+            this.activityLog.log({
+                action: 'push:sent',
+                resource: 'push',
+                description: `Push "${payload.title}" sent: ${response.successCount} succeeded, ${failed.length} failed`,
+                status: status === PushNotifStatus.FAILED ? 'error' : 'success',
+            });
             this.logger.log(`Push sent: ${response.successCount} success, ${failed.length} failed`);
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : String(err);
             await this.log(payload, PushNotifStatus.FAILED, 0, tokenStrings.length, message);
+            this.activityLog.log({
+                action: 'push:error',
+                resource: 'push',
+                description: `Push "${payload.title}" failed`,
+                status: 'error',
+                errorMessage: message,
+            });
             this.logger.error('Failed to send push notification', message);
         }
     }

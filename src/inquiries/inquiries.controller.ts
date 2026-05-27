@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body, UseGuards, HttpCode, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, UseGuards, HttpCode, Patch, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { InquiriesService } from './inquiries.service';
 import { CreateInquiryDto } from './dto/inquiry.dto';
@@ -32,5 +32,14 @@ export class InquiriesController {
     @ApiOperation({ summary: '[Admin] Mark inquiry as read' })
     markRead(@Param('id') id: string) {
         return this.service.markRead(id);
+    }
+
+    @Delete(':id')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @HttpCode(204)
+    @ApiOperation({ summary: '[Admin] Delete an inquiry' })
+    remove(@Param('id') id: string) {
+        return this.service.remove(id);
     }
 }

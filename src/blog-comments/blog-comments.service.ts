@@ -7,6 +7,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { FcmService } from '../fcm/fcm.service';
 import { PushNotifSource } from '../fcm/push-notification-log.entity';
 import { EventsGateway } from '../events/events.gateway';
+import { ActivityLogService } from '../activity-log/activity-log.service';
 
 @Injectable()
 export class BlogCommentsService {
@@ -15,6 +16,7 @@ export class BlogCommentsService {
         private readonly notifications: NotificationsService,
         private readonly fcm: FcmService,
         private readonly events: EventsGateway,
+        private readonly activityLog: ActivityLogService,
     ) { }
 
     async submit(blogId: string, dto: CreateBlogCommentDto): Promise<BlogComment> {
@@ -27,6 +29,13 @@ export class BlogCommentsService {
             body: `${dto.authorName} commented: "${dto.content.slice(0, 80)}"`,
             url: '/admin/comments',
             source: PushNotifSource.COMMENT,
+        });
+        this.activityLog.log({
+            action: 'comment:received',
+            resource: 'comment',
+            resourceId: saved.id,
+            resourceTitle: dto.authorName,
+            description: dto.authorName,
         });
         return saved;
     }
@@ -60,8 +69,14 @@ export class BlogCommentsService {
         comment.isApproved = true;
         const saved = await this.repo.save(comment);
         this.notifications.emit('comment_updated');
-        // emit to all: admin list updates + public blog page shows the new comment
         this.events.emitToAll('comment:approved', saved);
+        this.activityLog.log({
+            action: 'comment:approve',
+            resource: 'comment',
+            resourceId: id,
+            resourceTitle: saved.authorName,
+            description: saved.authorName,
+        });
         return saved;
     }
 
@@ -72,8 +87,14 @@ export class BlogCommentsService {
         if (adminNote !== undefined) comment.adminNote = adminNote;
         const saved = await this.repo.save(comment);
         this.notifications.emit('comment_updated');
-        // send minimal payload to public (enough to remove from view), full to admin
         this.events.emitToAll('comment:unapproved', { id: saved.id, blogId: saved.blogId });
+        this.activityLog.log({
+            action: 'comment:unapprove',
+            resource: 'comment',
+            resourceId: id,
+            resourceTitle: saved.authorName,
+            description: saved.authorName,
+        });
         return saved;
     }
 
@@ -83,5 +104,12 @@ export class BlogCommentsService {
         await this.repo.delete(id);
         this.notifications.emit('comment_updated');
         this.events.emitToAll('comment:deleted', { id, blogId });
+        this.activityLog.log({
+            action: 'comment:delete',
+            resource: 'comment',
+            resourceId: id,
+            resourceTitle: comment?.authorName,
+            description: comment?.authorName ?? '—',
+        });
     }
 }
