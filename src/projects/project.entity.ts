@@ -38,6 +38,12 @@ export class Project {
     @Column({ nullable: true, type: 'text' })
     adminNote: string;
 
+    @Column({ nullable: true, unique: true })
+    slug: string;
+
+    @Column({ nullable: true, type: 'text' })
+    content: string;
+
     @CreateDateColumn()
     createdAt: Date;
 

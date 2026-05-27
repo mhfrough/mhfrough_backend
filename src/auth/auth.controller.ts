@@ -17,15 +17,17 @@ export class AuthController {
     @ApiOperation({ summary: 'Admin login' })
     async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response, @Req() req: Request) {
         const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req.ip ?? 'unknown';
+        const userAgent = req.headers['user-agent'] as string | undefined;
         const user = await this.authService.validateUser(dto.email, dto.password, ip);
-        return this.authService.login(user, res);
+        return this.authService.login(user, res, { rememberMe: dto.rememberMe ?? false, userAgent, ip });
     }
 
     @Post('logout')
     @HttpCode(200)
     @ApiOperation({ summary: 'Logout and clear cookie' })
-    logout(@Res({ passthrough: true }) res: Response) {
-        return this.authService.logout(res);
+    logout(@Res({ passthrough: true }) res: Response, @Req() req: Request & { user?: any }) {
+        const sessionId = req.user?.sessionId as string | undefined;
+        return this.authService.logout(res, sessionId);
     }
 
     @Get('profile')

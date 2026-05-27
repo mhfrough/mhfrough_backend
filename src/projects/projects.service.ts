@@ -24,8 +24,18 @@ export class ProjectsService {
         return this.repo.find({ where, order: { sortOrder: 'ASC', createdAt: 'DESC' } });
     }
 
+    findFeatured(): Promise<Project[]> {
+        return this.repo.find({ where: { isPublished: true, featured: true }, order: { sortOrder: 'ASC', createdAt: 'DESC' } });
+    }
+
     async findOne(id: string): Promise<Project> {
         const p = await this.repo.findOne({ where: { id } });
+        if (!p) throw new NotFoundException('Project not found');
+        return p;
+    }
+
+    async findBySlug(slug: string): Promise<Project> {
+        const p = await this.repo.findOne({ where: { slug, isPublished: true } });
         if (!p) throw new NotFoundException('Project not found');
         return p;
     }
@@ -63,6 +73,21 @@ export class ProjectsService {
             resourceId: saved.id,
             resourceTitle: saved.title,
             description: saved.title,
+        });
+        return saved;
+    }
+
+    async patchFeatured(id: string, featured: boolean): Promise<Project> {
+        const project = await this.findOne(id);
+        project.featured = featured;
+        const saved = await this.repo.save(project);
+        this.events.emitToAll('project:updated', saved);
+        this.activityLog.log({
+            action: 'project:update',
+            resource: 'project',
+            resourceId: saved.id,
+            resourceTitle: saved.title,
+            description: `featured → ${featured}`,
         });
         return saved;
     }

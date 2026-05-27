@@ -7,11 +7,15 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { UsersModule } from '../users/users.module';
 import { ActivityLogModule } from '../activity-log/activity-log.module';
+import { AdminSettingsModule } from '../admin-settings/admin-settings.module';
+import { LoginSessionsModule } from '../login-sessions/login-sessions.module';
 
 @Module({
     imports: [
         UsersModule,
         ActivityLogModule,
+        AdminSettingsModule,
+        LoginSessionsModule,
         PassportModule,
         JwtModule.registerAsync({
             imports: [ConfigModule],

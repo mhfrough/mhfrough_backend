@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 import { User } from './user.entity';
 
+/** Default fallback; overridden dynamically by AdminSettings */
 export const MAX_LOGIN_ATTEMPTS = 3;
-const LOCK_DURATION_MS = 3 * 60 * 60 * 1000; // 3 hours
 
 @Injectable()
 export class UsersService {
@@ -23,11 +24,15 @@ export class UsersService {
         return this.repo.save(user);
     }
 
-    async recordFailedLogin(userId: string): Promise<User> {
+    async recordFailedLogin(
+        userId: string,
+        maxAttempts = MAX_LOGIN_ATTEMPTS,
+        lockDurationMinutes = 180,
+    ): Promise<User> {
         const user = await this.repo.findOneOrFail({ where: { id: userId } });
         user.loginAttempts += 1;
-        if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
-            user.lockedUntil = new Date(Date.now() + LOCK_DURATION_MS);
+        if (user.loginAttempts >= maxAttempts) {
+            user.lockedUntil = new Date(Date.now() + lockDurationMinutes * 60 * 1000);
         }
         return this.repo.save(user);
     }
@@ -42,5 +47,21 @@ export class UsersService {
         user.loginAttempts = 0;
         user.lockedUntil = null;
         return this.repo.save(user);
+    }
+
+    async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+        const user = await this.repo.findOneOrFail({ where: { id: userId } });
+        const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+        if (!valid) throw new UnauthorizedException('Current password is incorrect');
+        const hash = await bcrypt.hash(newPassword, 12);
+        await this.repo.update(userId, { passwordHash: hash });
+    }
+
+    async updateProfile(userId: string, data: Partial<Pick<User,
+        'displayName' | 'bio' | 'aboutHtml' | 'avatarUrl' | 'contactEmail' | 'phone' | 'location' |
+        'timezone' | 'website' | 'github' | 'linkedin' | 'twitter' |
+        'instagram' | 'youtube' | 'discord' | 'stackoverflow' | 'medium' | 'dribbble' | 'socialVisibility'>>): Promise<User> {
+        await this.repo.update(userId, data as any);
+        return this.repo.findOneOrFail({ where: { id: userId } });
     }
 }

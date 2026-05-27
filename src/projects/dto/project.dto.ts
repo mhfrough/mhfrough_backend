@@ -50,9 +50,25 @@ export class CreateProjectDto {
     @IsOptional()
     @IsString()
     adminNote?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    slug?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    content?: string;
 }
 
 export class UpdateProjectDto extends CreateProjectDto { }
+
+export class PatchFeaturedDto {
+    @ApiProperty()
+    @IsBoolean()
+    featured: boolean;
+}
 
 export class UnpublishProjectDto {
     @ApiPropertyOptional()

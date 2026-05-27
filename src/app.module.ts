@@ -15,6 +15,13 @@ import { ChatModule } from './chat/chat.module';
 import { EventsModule } from './events/events.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { ActivityLogModule } from './activity-log/activity-log.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
+import { UploadModule } from './upload/upload.module';
+import { AdminSettingsModule } from './admin-settings/admin-settings.module';
+import { LoginSessionsModule } from './login-sessions/login-sessions.module';
+import { GalleryModule } from './gallery/gallery.module';
+import { SiteSettingsModule } from './site-settings/site-settings.module';
 
 @Module({
   imports: [
@@ -48,6 +55,16 @@ import { ActivityLogModule } from './activity-log/activity-log.module';
     EventsModule,
     InvoicesModule,
     ActivityLogModule,
+    UploadModule,
+    AdminSettingsModule,
+    LoginSessionsModule,
+    GalleryModule,
+    SiteSettingsModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'uploads'),
+      serveRoot: '/uploads',
+      serveStaticOptions: { index: false },
+    }),
   ],
 })
 export class AppModule { }

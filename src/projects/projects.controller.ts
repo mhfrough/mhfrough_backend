@@ -4,7 +4,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ProjectsService } from './projects.service';
-import { CreateProjectDto, UpdateProjectDto, UnpublishProjectDto } from './dto/project.dto';
+import { CreateProjectDto, UpdateProjectDto, UnpublishProjectDto, PatchFeaturedDto } from './dto/project.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('Projects')
@@ -26,6 +26,18 @@ export class ProjectsController {
         return this.service.findAll(false);
     }
 
+    @Get('featured')
+    @ApiOperation({ summary: 'Get featured published projects' })
+    findFeatured() {
+        return this.service.findFeatured();
+    }
+
+    @Get('slug/:slug')
+    @ApiOperation({ summary: 'Get published project by slug' })
+    findBySlug(@Param('slug') slug: string) {
+        return this.service.findBySlug(slug);
+    }
+
     @Get(':id')
     findOne(@Param('id', ParseUUIDPipe) id: string) {
         return this.service.findOne(id);
@@ -43,6 +55,14 @@ export class ProjectsController {
     @ApiBearerAuth()
     update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateProjectDto) {
         return this.service.update(id, dto);
+    }
+
+    @Patch(':id/featured')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: '[Admin] Toggle featured flag' })
+    patchFeatured(@Param('id', ParseUUIDPipe) id: string, @Body() dto: PatchFeaturedDto) {
+        return this.service.patchFeatured(id, dto.featured);
     }
 
     @Patch(':id/unpublish')
