@@ -23,6 +23,26 @@ export class FeedbackService {
         return this.repo.find({ where: { isApproved: true, showOnSite: true }, order: { createdAt: 'DESC' } });
     }
 
+    async findApprovedPaginated(page: number, limit: number, q?: string) {
+        const qb = this.repo.createQueryBuilder('feedback')
+            .where('feedback.isApproved = :approved', { approved: true })
+            .andWhere('feedback.showOnSite = :show', { show: true });
+
+        if (q) {
+            qb.andWhere(
+                '(feedback.name ILIKE :q OR feedback.role ILIKE :q OR feedback.company ILIKE :q OR feedback.review ILIKE :q)',
+                { q: `%${q}%` },
+            );
+        }
+
+        qb.orderBy('feedback.createdAt', 'DESC')
+            .skip((page - 1) * limit)
+            .take(limit);
+
+        const [data, total] = await qb.getManyAndCount();
+        return { data, total, page, limit, totalPages: Math.max(1, Math.ceil(total / limit)) };
+    }
+
     findAll(): Promise<Feedback[]> {
         return this.repo.find({ order: { createdAt: 'DESC' } });
     }

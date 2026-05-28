@@ -1,8 +1,9 @@
 import {
     Controller, Get, Post, Put, Patch, Delete,
-    Param, Body, UseGuards, ParseUUIDPipe,
+    Param, Body, Query, UseGuards, ParseUUIDPipe,
+    ParseIntPipe, DefaultValuePipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { BlogsService } from './blogs.service';
 import { CreateBlogDto, UpdateBlogDto, UnpublishBlogDto } from './dto/blog.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -17,9 +18,16 @@ export class BlogsController {
     ) { }
 
     @Get()
-    @ApiOperation({ summary: 'Get all published blog posts' })
-    findAll() {
-        return this.service.findAll(true);
+    @ApiOperation({ summary: 'Get all published blog posts (paginated)' })
+    @ApiQuery({ name: 'page', required: false, type: Number })
+    @ApiQuery({ name: 'limit', required: false, type: Number })
+    @ApiQuery({ name: 'q', required: false, type: String })
+    findAll(
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+        @Query('limit', new DefaultValuePipe(12), ParseIntPipe) limit: number,
+        @Query('q') q?: string,
+    ) {
+        return this.service.findPublicPaginated(page, limit, q);
     }
 
     @Get('all')

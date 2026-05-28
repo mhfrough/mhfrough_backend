@@ -24,6 +24,26 @@ export class ProjectsService {
         return this.repo.find({ where, order: { sortOrder: 'ASC', createdAt: 'DESC' } });
     }
 
+    async findPublicPaginated(page: number, limit: number, q?: string) {
+        const qb = this.repo.createQueryBuilder('project')
+            .where('project.isPublished = :pub', { pub: true });
+
+        if (q) {
+            qb.andWhere(
+                '(project.title ILIKE :q OR project.description ILIKE :q OR project.techStack ILIKE :q)',
+                { q: `%${q}%` },
+            );
+        }
+
+        qb.orderBy('project.sortOrder', 'ASC')
+            .addOrderBy('project.createdAt', 'DESC')
+            .skip((page - 1) * limit)
+            .take(limit);
+
+        const [data, total] = await qb.getManyAndCount();
+        return { data, total, page, limit, totalPages: Math.max(1, Math.ceil(total / limit)) };
+    }
+
     findFeatured(): Promise<Project[]> {
         return this.repo.find({ where: { isPublished: true, featured: true }, order: { sortOrder: 'ASC', createdAt: 'DESC' } });
     }

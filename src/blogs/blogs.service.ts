@@ -17,6 +17,26 @@ export class BlogsService {
         return this.repo.find({ where, order: { publishedAt: 'DESC', createdAt: 'DESC' } });
     }
 
+    async findPublicPaginated(page: number, limit: number, q?: string) {
+        const qb = this.repo.createQueryBuilder('blog')
+            .where('blog.isPublished = :pub', { pub: true });
+
+        if (q) {
+            qb.andWhere(
+                '(blog.title ILIKE :q OR blog.excerpt ILIKE :q OR blog.tags ILIKE :q)',
+                { q: `%${q}%` },
+            );
+        }
+
+        qb.orderBy('blog.publishedAt', 'DESC')
+            .addOrderBy('blog.createdAt', 'DESC')
+            .skip((page - 1) * limit)
+            .take(limit);
+
+        const [data, total] = await qb.getManyAndCount();
+        return { data, total, page, limit, totalPages: Math.max(1, Math.ceil(total / limit)) };
+    }
+
     async findBySlug(slug: string): Promise<Blog> {
         const blog = await this.repo.findOne({ where: { slug } });
         if (!blog) throw new NotFoundException('Blog post not found');

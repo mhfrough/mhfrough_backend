@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Delete, Patch, Param, Body, UseGuards, HttpCode } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Delete, Patch, Param, Body, Query, UseGuards, HttpCode, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { FeedbackService } from './feedback.service';
 import { CreateFeedbackDto, UnapproveDto } from './dto/feedback.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -11,9 +11,16 @@ export class FeedbackController {
     constructor(private readonly service: FeedbackService) { }
 
     @Get()
-    @ApiOperation({ summary: 'Get approved feedback/reviews' })
-    findApproved() {
-        return this.service.findApproved();
+    @ApiOperation({ summary: 'Get approved feedback/reviews (paginated)' })
+    @ApiQuery({ name: 'page', required: false, type: Number })
+    @ApiQuery({ name: 'limit', required: false, type: Number })
+    @ApiQuery({ name: 'q', required: false, type: String })
+    findApproved(
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+        @Query('limit', new DefaultValuePipe(5), ParseIntPipe) limit: number,
+        @Query('q') q?: string,
+    ) {
+        return this.service.findApprovedPaginated(page, limit, q);
     }
 
     @Post()
