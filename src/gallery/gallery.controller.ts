@@ -1,6 +1,7 @@
 import {
     Controller, Get, Post, Put, Delete,
     Param, Body, UseGuards, ParseUUIDPipe, Patch,
+    Query, ParseIntPipe, DefaultValuePipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { GalleryService } from './gallery.service';
@@ -17,9 +18,20 @@ export class GalleryController {
     ) { }
 
     @Get()
-    @ApiOperation({ summary: 'Get all published gallery items' })
-    findAll() {
-        return this.service.findAll(true);
+    @ApiOperation({ summary: 'Get paginated published gallery items' })
+    findAll(
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+        @Query('limit', new DefaultValuePipe(24), ParseIntPipe) limit: number,
+        @Query('q') q?: string,
+        @Query('category') category?: string,
+    ) {
+        return this.service.findPublicPaginated(page, limit, q, category);
+    }
+
+    @Get('categories')
+    @ApiOperation({ summary: 'Get distinct published gallery categories' })
+    findCategories() {
+        return this.service.findDistinctCategories();
     }
 
     @Get('all')
