@@ -8,7 +8,6 @@ import { GalleryService } from './gallery.service';
 import { CreateGalleryItemDto, UpdateGalleryItemDto, ReorderGalleryDto } from './dto/gallery-item.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ActivityLogService } from '../activity-log/activity-log.service';
-import { EventsGateway } from '../events/events.gateway';
 
 @ApiTags('Gallery')
 @Controller('gallery')
@@ -16,7 +15,6 @@ export class GalleryController {
     constructor(
         private readonly service: GalleryService,
         private readonly activityLog: ActivityLogService,
-        private readonly events: EventsGateway,
     ) { }
 
     @Get()
@@ -62,7 +60,6 @@ export class GalleryController {
     async create(@Body() dto: CreateGalleryItemDto) {
         const result = await this.service.create(dto);
         this.activityLog.log({ action: 'gallery:created', resource: 'gallery', description: `Gallery item created: ${dto.title ?? result.id}`, status: 'success' });
-        if (result.isPublished) this.events.emitToAll('gallery:created', result);
         return result;
     }
 
@@ -72,11 +69,6 @@ export class GalleryController {
     async update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateGalleryItemDto) {
         const result = await this.service.update(id, dto);
         this.activityLog.log({ action: 'gallery:updated', resource: 'gallery', resourceId: id, description: `Gallery item updated: ${id}`, status: 'success' });
-        if (result.isPublished) {
-            this.events.emitToAll('gallery:updated', result);
-        } else {
-            this.events.emitToAll('gallery:deleted', { id: result.id });
-        }
         return result;
     }
 
@@ -87,7 +79,6 @@ export class GalleryController {
     async reorder(@Body() dto: ReorderGalleryDto) {
         const result = await this.service.reorder(dto.items);
         this.activityLog.log({ action: 'gallery:reordered', resource: 'gallery', description: 'Gallery items reordered', status: 'success' });
-        this.events.emitToAll('gallery:reordered', {});
         return result;
     }
 
@@ -97,7 +88,6 @@ export class GalleryController {
     async remove(@Param('id', ParseUUIDPipe) id: string) {
         const result = await this.service.remove(id);
         this.activityLog.log({ action: 'gallery:deleted', resource: 'gallery', resourceId: id, description: `Gallery item deleted: ${id}`, status: 'success' });
-        this.events.emitToAll('gallery:deleted', { id });
         return result;
     }
 }

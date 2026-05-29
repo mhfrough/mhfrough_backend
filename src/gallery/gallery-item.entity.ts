@@ -47,9 +47,6 @@ export class GalleryItem {
     @Column({ nullable: true, type: 'bigint' })
     fileSize: number;
 
-    @Column({ nullable: true, type: 'text' })
-    adminNote: string;
-
     @CreateDateColumn()
     createdAt: Date;
 

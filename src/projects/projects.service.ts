@@ -149,10 +149,6 @@ export class ProjectsService {
         return saved;
     }
 
-    async reorder(items: { id: string; sortOrder: number }[]): Promise<void> {
-        await Promise.all(items.map(({ id, sortOrder }) => this.repo.update(id, { sortOrder })));
-    }
-
     async remove(id: string): Promise<void> {
         const project = await this.findOne(id);
         const title = project.title;
