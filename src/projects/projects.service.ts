@@ -24,7 +24,7 @@ export class ProjectsService {
         return this.repo.find({ where, order: { sortOrder: 'ASC', createdAt: 'DESC' } });
     }
 
-    async findPublicPaginated(page: number, limit: number, q?: string) {
+    async findPublicPaginated(page: number, limit: number, q?: string, tag?: string) {
         const qb = this.repo.createQueryBuilder('project')
             .where('project.isPublished = :pub', { pub: true });
 
@@ -32,6 +32,13 @@ export class ProjectsService {
             qb.andWhere(
                 '(project.title ILIKE :q OR project.description ILIKE :q OR project.techStack ILIKE :q)',
                 { q: `%${q}%` },
+            );
+        }
+
+        if (tag && tag !== 'all') {
+            qb.andWhere(
+                '(project.tags = :t OR project.tags LIKE :ts OR project.tags LIKE :te OR project.tags LIKE :tm)',
+                { t: tag, ts: `${tag},%`, te: `%,${tag}`, tm: `%,${tag},%` },
             );
         }
 
@@ -46,6 +53,20 @@ export class ProjectsService {
 
     findFeatured(): Promise<Project[]> {
         return this.repo.find({ where: { isPublished: true, featured: true }, order: { sortOrder: 'ASC', createdAt: 'DESC' } });
+    }
+
+    async findDistinctTags(): Promise<string[]> {
+        const rows = await this.repo.createQueryBuilder('project')
+            .select('project.tags', 'tags')
+            .where("project.tags IS NOT NULL AND project.tags != ''")
+            .getRawMany();
+        const all: string[] = [];
+        for (const row of rows) {
+            if (row.tags) {
+                all.push(...String(row.tags).split(',').map((t: string) => t.trim()).filter(Boolean));
+            }
+        }
+        return [...new Set(all)].sort();
     }
 
     async findOne(id: string): Promise<Project> {

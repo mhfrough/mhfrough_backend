@@ -17,7 +17,7 @@ export class BlogsService {
         return this.repo.find({ where, order: { publishedAt: 'DESC', createdAt: 'DESC' } });
     }
 
-    async findPublicPaginated(page: number, limit: number, q?: string) {
+    async findPublicPaginated(page: number, limit: number, q?: string, tag?: string) {
         const qb = this.repo.createQueryBuilder('blog')
             .where('blog.isPublished = :pub', { pub: true });
 
@@ -25,6 +25,13 @@ export class BlogsService {
             qb.andWhere(
                 '(blog.title ILIKE :q OR blog.excerpt ILIKE :q OR blog.tags ILIKE :q)',
                 { q: `%${q}%` },
+            );
+        }
+
+        if (tag && tag !== 'all') {
+            qb.andWhere(
+                '(blog.tags = :t OR blog.tags LIKE :ts OR blog.tags LIKE :te OR blog.tags LIKE :tm)',
+                { t: tag, ts: `${tag},%`, te: `%,${tag}`, tm: `%,${tag},%` },
             );
         }
 
@@ -41,6 +48,20 @@ export class BlogsService {
         const blog = await this.repo.findOne({ where: { slug } });
         if (!blog) throw new NotFoundException('Blog post not found');
         return blog;
+    }
+
+    async findDistinctTags(): Promise<string[]> {
+        const rows = await this.repo.createQueryBuilder('blog')
+            .select('blog.tags', 'tags')
+            .where("blog.tags IS NOT NULL AND blog.tags != ''")
+            .getRawMany();
+        const all: string[] = [];
+        for (const row of rows) {
+            if (row.tags) {
+                all.push(...String(row.tags).split(',').map((t: string) => t.trim()).filter(Boolean));
+            }
+        }
+        return [...new Set(all)].sort();
     }
 
     async findOne(id: string): Promise<Blog> {

@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsBoolean, IsEnum, IsInt, Min } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsEnum, IsInt, Min, IsArray } from 'class-validator';
 import { MediaType } from '../gallery-item.entity';
 
 export class CreateGalleryItemDto {
@@ -42,6 +42,11 @@ export class CreateGalleryItemDto {
     @IsOptional()
     @IsString()
     altText?: string;
+
+    @ApiPropertyOptional({ type: [String] })
+    @IsOptional()
+    @IsArray()
+    tags?: string[];
 
     @ApiPropertyOptional()
     @IsOptional()

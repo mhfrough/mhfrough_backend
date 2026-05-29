@@ -22,12 +22,14 @@ export class BlogsController {
     @ApiQuery({ name: 'page', required: false, type: Number })
     @ApiQuery({ name: 'limit', required: false, type: Number })
     @ApiQuery({ name: 'q', required: false, type: String })
+    @ApiQuery({ name: 'tag', required: false, type: String })
     findAll(
         @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
         @Query('limit', new DefaultValuePipe(12), ParseIntPipe) limit: number,
         @Query('q') q?: string,
+        @Query('tag') tag?: string,
     ) {
-        return this.service.findPublicPaginated(page, limit, q);
+        return this.service.findPublicPaginated(page, limit, q, tag);
     }
 
     @Get('all')
@@ -36,6 +38,12 @@ export class BlogsController {
     @ApiOperation({ summary: '[Admin] Get all blog posts' })
     findAllAdmin() {
         return this.service.findAll(false);
+    }
+
+    @Get('tags')
+    @ApiOperation({ summary: 'Get distinct blog tags' })
+    findTags() {
+        return this.service.findDistinctTags();
     }
 
     @Get(':slug')

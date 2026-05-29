@@ -20,6 +20,11 @@ export class CreateProjectDto {
     @IsArray()
     techStack?: string[];
 
+    @ApiPropertyOptional({ type: [String] })
+    @IsOptional()
+    @IsArray()
+    tags?: string[];
+
     @ApiPropertyOptional()
     @IsOptional()
     @IsUrl()

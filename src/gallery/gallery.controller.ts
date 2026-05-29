@@ -24,14 +24,21 @@ export class GalleryController {
         @Query('limit', new DefaultValuePipe(24), ParseIntPipe) limit: number,
         @Query('q') q?: string,
         @Query('category') category?: string,
+        @Query('tag') tag?: string,
     ) {
-        return this.service.findPublicPaginated(page, limit, q, category);
+        return this.service.findPublicPaginated(page, limit, q, category, tag);
     }
 
     @Get('categories')
     @ApiOperation({ summary: 'Get distinct published gallery categories' })
     findCategories() {
         return this.service.findDistinctCategories();
+    }
+
+    @Get('tags')
+    @ApiOperation({ summary: 'Get distinct gallery tags' })
+    findTags() {
+        return this.service.findDistinctTags();
     }
 
     @Get('all')

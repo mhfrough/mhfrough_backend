@@ -16,7 +16,7 @@ export class GalleryService {
     }
 
     async findPublicPaginated(
-        page: number, limit: number, q?: string, category?: string,
+        page: number, limit: number, q?: string, category?: string, tag?: string,
     ): Promise<{ data: GalleryItem[]; total: number; page: number; limit: number; totalPages: number }> {
         const qb = this.repo.createQueryBuilder('g')
             .where('g.isPublished = :pub', { pub: true });
@@ -28,6 +28,12 @@ export class GalleryService {
         }
         if (category && category !== 'all') {
             qb.andWhere('g.category = :category', { category });
+        }
+        if (tag && tag !== 'all') {
+            qb.andWhere(
+                '(g.tags = :t OR g.tags LIKE :ts OR g.tags LIKE :te OR g.tags LIKE :tm)',
+                { t: tag, ts: `${tag},%`, te: `%,${tag}`, tm: `%,${tag},%` },
+            );
         }
         qb.orderBy('g.sortOrder', 'ASC')
             .addOrderBy('g.createdAt', 'DESC')
@@ -44,6 +50,20 @@ export class GalleryService {
             .setParameter('pub', true)
             .getRawMany();
         return rows.map((r: any) => r.category).filter(Boolean).sort();
+    }
+
+    async findDistinctTags(): Promise<string[]> {
+        const rows = await this.repo.createQueryBuilder('g')
+            .select('g.tags', 'tags')
+            .where("g.tags IS NOT NULL AND g.tags != ''")
+            .getRawMany();
+        const all: string[] = [];
+        for (const row of rows) {
+            if (row.tags) {
+                all.push(...String(row.tags).split(',').map((t: string) => t.trim()).filter(Boolean));
+            }
+        }
+        return [...new Set(all)].sort();
     }
 
     async findOne(id: string): Promise<GalleryItem> {

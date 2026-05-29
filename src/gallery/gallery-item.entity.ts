@@ -38,6 +38,9 @@ export class GalleryItem {
     @Column({ nullable: true })
     altText: string;
 
+    @Column('simple-array', { nullable: true })
+    tags: string[];
+
     @Column({ nullable: true })
     mimeType: string;
 

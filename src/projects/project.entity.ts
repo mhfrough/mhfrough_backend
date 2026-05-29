@@ -20,6 +20,9 @@ export class Project {
     @Column('simple-array', { nullable: true })
     techStack: string[];
 
+    @Column('simple-array', { nullable: true })
+    tags: string[];
+
     @Column({ nullable: true })
     liveUrl: string;
 

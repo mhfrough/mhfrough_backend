@@ -22,6 +22,7 @@ import { AdminSettingsModule } from './admin-settings/admin-settings.module';
 import { LoginSessionsModule } from './login-sessions/login-sessions.module';
 import { GalleryModule } from './gallery/gallery.module';
 import { SiteSettingsModule } from './site-settings/site-settings.module';
+import { TickerModule } from './ticker/ticker.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { SiteSettingsModule } from './site-settings/site-settings.module';
     LoginSessionsModule,
     GalleryModule,
     SiteSettingsModule,
+    TickerModule,
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',
