@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateClientErrorDto {
@@ -25,4 +25,11 @@ export class CreateClientErrorDto {
     @IsOptional()
     @MaxLength(200)
     context?: string;
+
+    @ApiPropertyOptional({ description: 'HTTP status code of the failed request' })
+    @IsInt()
+    @IsOptional()
+    @Min(100)
+    @Max(599)
+    statusCode?: number;
 }

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -15,6 +16,7 @@ import { ChatModule } from './chat/chat.module';
 import { EventsModule } from './events/events.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { ActivityLogModule } from './activity-log/activity-log.module';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { UploadModule } from './upload/upload.module';
@@ -67,6 +69,9 @@ import { TickerModule } from './ticker/ticker.module';
       serveRoot: '/uploads',
       serveStaticOptions: { index: false },
     }),
+  ],
+  providers: [
+    { provide: APP_FILTER, useClass: AllExceptionsFilter },
   ],
 })
 export class AppModule { }

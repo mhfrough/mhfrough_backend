@@ -54,7 +54,7 @@ export class ActivityLogController {
             description: dto.message,
             status: 'error',
             errorMessage: dto.stack,
-            metadata: { url: dto.url, context: dto.context },
+            metadata: { url: dto.url, context: dto.context, statusCode: dto.statusCode },
         });
     }
 
