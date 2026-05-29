@@ -11,6 +11,7 @@ interface JoinPayload { sessionId?: string; visitorName?: string; }
 interface MessagePayload { sessionId: string; content: string; }
 interface TypingPayload { sessionId: string; isTyping: boolean; }
 interface AdminSelectPayload { sessionId: string; }
+interface AudioMessagePayload { sessionId: string; audioUrl: string; }
 
 @WebSocketGateway({
     cors: {
@@ -115,6 +116,31 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.server.to('admins').emit('visitor:typing', payload);
     }
 
+    @SubscribeMessage('visitor:audio_message')
+    async onVisitorAudioMessage(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() payload: AudioMessagePayload,
+    ) {
+        const sessionId = this.visitorSockets.get(client.id) ?? payload.sessionId;
+        if (!sessionId) return;
+
+        const msg = await this.chatService.saveMessage(sessionId, '[Audio Message]', 'visitor', 'audio', payload.audioUrl);
+
+        this.server.to('admins').emit('message:new', msg);
+
+        this.fcm.sendPush({
+            title: '🎤 New Audio Message',
+            body: 'Visitor sent an audio note',
+            url: '/admin/dashboard',
+            source: PushNotifSource.CHAT,
+        });
+
+        const sessions = await this.chatService.getAllSessions();
+        this.server.to('admins').emit('sessions:update', sessions);
+
+        return msg;
+    }
+
     // ─── Admin events ─────────────────────────────────────────────────────────
 
     @SubscribeMessage('admin:join')
@@ -168,6 +194,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     ) {
         if (!this.adminSockets.has(client.id)) return;
         this.server.to(`session:${payload.sessionId}`).emit('admin:typing', payload);
+    }
+
+    @SubscribeMessage('admin:audio_message')
+    async onAdminAudioMessage(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() payload: AudioMessagePayload,
+    ) {
+        if (!this.adminSockets.has(client.id)) return;
+
+        const msg = await this.chatService.saveMessage(payload.sessionId, '[Audio Message]', 'admin', 'audio', payload.audioUrl);
+
+        // Deliver to visitor (and other admins watching this session) — exclude sender
+        client.to(`session:${payload.sessionId}`).emit('message:new', msg);
+
+        return msg;
     }
 
     @SubscribeMessage('admin:close_session')

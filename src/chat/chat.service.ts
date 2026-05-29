@@ -108,8 +108,14 @@ export class ChatService implements OnModuleInit {
 
     // ─── Messages ─────────────────────────────────────────────────────────────
 
-    async saveMessage(sessionId: string, content: string, sender: 'visitor' | 'admin'): Promise<ChatMessage> {
-        const msg = this.messages.create({ sessionId, content, sender });
+    async saveMessage(
+        sessionId: string,
+        content: string,
+        sender: 'visitor' | 'admin',
+        messageType: 'text' | 'audio' = 'text',
+        audioUrl?: string,
+    ): Promise<ChatMessage> {
+        const msg = this.messages.create({ sessionId, content, sender, messageType, audioUrl: audioUrl ?? null });
         const saved = await this.messages.save(msg);
         await this.sessions.update(sessionId, { lastActivityAt: new Date() });
         return saved;

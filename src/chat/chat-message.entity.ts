@@ -24,6 +24,12 @@ export class ChatMessage {
     @Column({ type: 'varchar', default: 'visitor' })
     sender: MessageSender;
 
+    @Column({ type: 'varchar', default: 'text' })
+    messageType: 'text' | 'audio';
+
+    @Column({ type: 'varchar', nullable: true, default: null })
+    audioUrl: string | null;
+
     @Column({ default: false })
     read: boolean;
 
