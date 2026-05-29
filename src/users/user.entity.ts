@@ -49,11 +49,11 @@ export class User {
     @Column({ nullable: true, type: 'varchar' })
     phone: string | null;
 
-    /** e.g. "Karachi, Pakistan" — shown on the contact page */
+    /** e.g. "Karāchi, Pakistan" — shown on the contact page */
     @Column({ nullable: true, type: 'varchar' })
     location: string | null;
 
-    @Column({ nullable: true, type: 'varchar', default: 'Asia/Karachi' })
+    @Column({ nullable: true, type: 'varchar', default: 'Asia/Karāchi' })
     timezone: string | null;
 
     @Column({ nullable: true, type: 'varchar' })

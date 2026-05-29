@@ -25,7 +25,7 @@ export class SiteSettingsController {
         return {
             // Branding (from admin_settings)
             copyrightOwner: settings?.copyrightOwner ?? 'mhfrough.dev',
-            footerTagline: settings?.footerTagline ?? 'Made with \u2665 in Karachi',
+            footerTagline: settings?.footerTagline ?? 'Made with \u2665 in Karāchi',
             showFooterTagline: settings?.showFooterTagline ?? true,
 
             // Profile (from user)

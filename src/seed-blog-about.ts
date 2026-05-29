@@ -38,9 +38,9 @@ async function seed() {
             'A quick introduction to who I am, what I do, and why I built mhfrough.dev from scratch.',
         content: `## Who Am I?
 
-Hi — I'm **Mohammad Hamza**, an application developer and product designer based in Karachi, Pakistan. I currently work as **Lead Front-end Developer** at Arittek Solutions (Pvt.) Ltd., where I lead the development of web and mobile products used by real people every day.
+Hi — I'm **Mohammad Hamza**, an application developer and product designer based in Karāchi, Pakistan. I currently work as **Lead Front-end Developer** at Arittek Solutions (Pvt.) Ltd., where I lead the development of web and mobile products used by real people every day.
 
-I hold a Bachelor of Science in Computer Science from **Karachi Institute of Economics & Technology (KIET)**, formerly known as PAF-KIET. My journey into tech started with a curiosity for how things work under the hood — and that curiosity has never stopped.
+I hold a Bachelor of Science in Computer Science from **Karāchi Institute of Economics & Technology (KIET)**, formerly known as PAF-KIET. My journey into tech started with a curiosity for how things work under the hood — and that curiosity has never stopped.
 
 ## What I Do
 
