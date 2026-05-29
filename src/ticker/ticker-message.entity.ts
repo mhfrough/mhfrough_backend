@@ -11,6 +11,9 @@ export class TickerMessage {
     @Column({ default: true })
     isPublished: boolean;
 
+    @Column({ type: 'timestamptz', nullable: true, default: null })
+    autoDeactivateAt: Date | null;
+
     @CreateDateColumn()
     createdAt: Date;
 

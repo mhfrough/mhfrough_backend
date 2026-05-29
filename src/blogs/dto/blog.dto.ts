@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsBoolean, IsArray, IsInt, Min } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsArray, IsInt, Min, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateBlogDto {
     @ApiProperty()
@@ -43,6 +44,12 @@ export class CreateBlogDto {
     @IsOptional()
     @IsString()
     adminNote?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsInt()
+    @Min(0)
+    sortOrder?: number;
 }
 
 export class UpdateBlogDto extends CreateBlogDto { }
@@ -52,4 +59,22 @@ export class UnpublishBlogDto {
     @IsOptional()
     @IsString()
     adminNote?: string;
+}
+
+export class ReorderBlogItemDto {
+    @ApiProperty()
+    @IsString()
+    id: string;
+
+    @ApiProperty()
+    @IsInt()
+    @Min(0)
+    sortOrder: number;
+}
+
+export class ReorderBlogDto {
+    @ApiProperty({ type: [ReorderBlogItemDto] })
+    @ValidateNested({ each: true })
+    @Type(() => ReorderBlogItemDto)
+    items: ReorderBlogItemDto[];
 }

@@ -19,6 +19,7 @@ import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ActivityLogService } from '../activity-log/activity-log.service';
+import { EventsGateway } from '../events/events.gateway';
 
 @ApiTags('Admin Settings')
 @Controller('admin/settings')
@@ -30,6 +31,7 @@ export class AdminSettingsController {
         private readonly loginSessionsService: LoginSessionsService,
         private readonly usersService: UsersService,
         private readonly activityLog: ActivityLogService,
+        private readonly events: EventsGateway,
     ) { }
 
     // ── Security Settings ────────────────────────────────────────────────────
@@ -151,6 +153,7 @@ export class AdminSettingsController {
             status: 'success',
         });
         const { passwordHash: _, ...profile } = updated;
+        this.events.emitToAll('profile:updated', profile);
         return profile;
     }
 }

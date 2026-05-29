@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsBoolean, MaxLength, MinLength } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, MaxLength, MinLength, IsDateString } from 'class-validator';
 
 export class CreateTickerMessageDto {
     @ApiProperty({ description: 'Ticker message text', maxLength: 500 })
@@ -12,6 +12,11 @@ export class CreateTickerMessageDto {
     @IsOptional()
     @IsBoolean()
     isPublished?: boolean;
+
+    @ApiPropertyOptional({ description: 'Date/time after which the ticker auto-unpublishes' })
+    @IsOptional()
+    @IsDateString()
+    autoDeactivateAt?: string;
 }
 
 export class UpdateTickerMessageDto {
@@ -26,4 +31,9 @@ export class UpdateTickerMessageDto {
     @IsOptional()
     @IsBoolean()
     isPublished?: boolean;
+
+    @ApiPropertyOptional({ description: 'Date/time after which the ticker auto-unpublishes' })
+    @IsOptional()
+    @IsDateString()
+    autoDeactivateAt?: string | null;
 }

@@ -8,6 +8,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TickerService } from './ticker.service';
 import { CreateTickerMessageDto, UpdateTickerMessageDto } from './dto/ticker-message.dto';
 import { ActivityLogService } from '../activity-log/activity-log.service';
+import { EventsGateway } from '../events/events.gateway';
 
 @ApiTags('Ticker')
 @Controller('ticker')
@@ -15,6 +16,7 @@ export class TickerController {
     constructor(
         private readonly service: TickerService,
         private readonly activityLog: ActivityLogService,
+        private readonly events: EventsGateway,
     ) { }
 
     /** Public: active tickers shown on the website */
@@ -49,6 +51,7 @@ export class TickerController {
             description: 'Ticker message created',
             status: 'success',
         });
+        if (result.isPublished) this.events.emitToAll('ticker:created', result);
         return result;
     }
 
@@ -68,6 +71,11 @@ export class TickerController {
             description: 'Ticker message updated',
             status: 'success',
         });
+        if (result.isPublished) {
+            this.events.emitToAll('ticker:updated', result);
+        } else {
+            this.events.emitToAll('ticker:deleted', { id: result.id });
+        }
         return result;
     }
 
@@ -84,6 +92,7 @@ export class TickerController {
             description: 'Ticker message deleted',
             status: 'success',
         });
+        this.events.emitToAll('ticker:deleted', { id });
         return { success: true };
     }
 }

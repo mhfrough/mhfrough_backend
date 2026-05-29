@@ -27,10 +27,13 @@ export class TickerService {
     }
 
     findPublished(): Promise<TickerMessage[]> {
-        return this.repo.find({
-            where: { isPublished: true },
-            order: { createdAt: 'DESC' },
-        });
+        const now = new Date();
+        return this.repo
+            .createQueryBuilder('t')
+            .where('t.isPublished = true')
+            .andWhere('(t.autoDeactivateAt IS NULL OR t.autoDeactivateAt > :now)', { now })
+            .orderBy('t.createdAt', 'DESC')
+            .getMany();
     }
 
     async findOne(id: string): Promise<TickerMessage> {

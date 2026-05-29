@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Delete, Patch, Param, Body, Query, UseGuards, HttpCode, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { FeedbackService } from './feedback.service';
-import { CreateFeedbackDto, UnapproveDto } from './dto/feedback.dto';
+import { CreateFeedbackDto, UnapproveDto, ReorderFeedbackDto } from './dto/feedback.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Throttle } from '@nestjs/throttler';
 
@@ -58,5 +58,13 @@ export class FeedbackController {
     @ApiBearerAuth()
     remove(@Param('id') id: string) {
         return this.service.remove(id);
+    }
+
+    @Patch('reorder')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: '[Admin] Reorder feedback/reviews' })
+    reorder(@Body() dto: ReorderFeedbackDto) {
+        return this.service.reorder(dto.items);
     }
 }

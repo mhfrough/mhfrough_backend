@@ -6,6 +6,7 @@ import { AdminSettingsController } from './admin-settings.controller';
 import { LoginSessionsModule } from '../login-sessions/login-sessions.module';
 import { UsersModule } from '../users/users.module';
 import { ActivityLogModule } from '../activity-log/activity-log.module';
+import { EventsModule } from '../events/events.module';
 
 @Module({
     imports: [
@@ -13,6 +14,7 @@ import { ActivityLogModule } from '../activity-log/activity-log.module';
         LoginSessionsModule,
         UsersModule,
         ActivityLogModule,
+        EventsModule,
     ],
     controllers: [AdminSettingsController],
     providers: [AdminSettingsService],

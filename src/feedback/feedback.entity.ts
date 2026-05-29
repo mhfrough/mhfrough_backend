@@ -32,6 +32,9 @@ export class Feedback {
     @Column({ nullable: true, type: 'text' })
     adminNote: string;
 
+    @Column({ default: 0 })
+    sortOrder: number;
+
     @CreateDateColumn()
     createdAt: Date;
 }

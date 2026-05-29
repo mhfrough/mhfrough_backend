@@ -4,9 +4,10 @@ import { GalleryItem } from './gallery-item.entity';
 import { GalleryService } from './gallery.service';
 import { GalleryController } from './gallery.controller';
 import { ActivityLogModule } from '../activity-log/activity-log.module';
+import { EventsModule } from '../events/events.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([GalleryItem]), ActivityLogModule],
+    imports: [TypeOrmModule.forFeature([GalleryItem]), ActivityLogModule, EventsModule],
     providers: [GalleryService],
     controllers: [GalleryController],
 })

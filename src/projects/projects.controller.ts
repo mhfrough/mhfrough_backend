@@ -94,4 +94,12 @@ export class ProjectsController {
     remove(@Param('id', ParseUUIDPipe) id: string) {
         return this.service.remove(id);
     }
+
+    @Patch('reorder')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: '[Admin] Reorder projects' })
+    reorder(@Body() dto: { items: { id: string; sortOrder: number }[] }) {
+        return this.service.reorder(dto.items);
+    }
 }

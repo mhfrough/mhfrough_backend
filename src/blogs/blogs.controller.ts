@@ -5,9 +5,10 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { BlogsService } from './blogs.service';
-import { CreateBlogDto, UpdateBlogDto, UnpublishBlogDto } from './dto/blog.dto';
+import { CreateBlogDto, UpdateBlogDto, UnpublishBlogDto, ReorderBlogDto } from './dto/blog.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ActivityLogService } from '../activity-log/activity-log.service';
+import { EventsGateway } from '../events/events.gateway';
 
 @ApiTags('Blogs')
 @Controller('blogs')
@@ -15,6 +16,7 @@ export class BlogsController {
     constructor(
         private readonly service: BlogsService,
         private readonly activityLog: ActivityLogService,
+        private readonly events: EventsGateway,
     ) { }
 
     @Get()
@@ -57,6 +59,7 @@ export class BlogsController {
     async create(@Body() dto: CreateBlogDto) {
         const result = await this.service.create(dto);
         this.activityLog.log({ action: 'blog:created', resource: 'blog', description: `Blog post created: ${dto.title ?? result.id}`, status: 'success' });
+        if (result.isPublished) this.events.emitToAll('blog:created', result);
         return result;
     }
 
@@ -66,6 +69,11 @@ export class BlogsController {
     async update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateBlogDto) {
         const result = await this.service.update(id, dto);
         this.activityLog.log({ action: 'blog:updated', resource: 'blog', resourceId: id, description: `Blog post updated: ${id}`, status: 'success' });
+        if (result.isPublished) {
+            this.events.emitToAll('blog:updated', result);
+        } else {
+            this.events.emitToAll('blog:unpublished', { id: result.id });
+        }
         return result;
     }
 
@@ -75,6 +83,7 @@ export class BlogsController {
     async unpublish(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UnpublishBlogDto) {
         const result = await this.service.unpublish(id, dto.adminNote);
         this.activityLog.log({ action: 'blog:unpublished', resource: 'blog', resourceId: id, description: `Blog post unpublished: ${id}`, status: 'success' });
+        this.events.emitToAll('blog:unpublished', { id: result.id });
         return result;
     }
 
@@ -84,6 +93,15 @@ export class BlogsController {
     async remove(@Param('id', ParseUUIDPipe) id: string) {
         const result = await this.service.remove(id);
         this.activityLog.log({ action: 'blog:deleted', resource: 'blog', resourceId: id, description: `Blog post deleted: ${id}`, status: 'success' });
+        this.events.emitToAll('blog:deleted', { id });
         return result;
+    }
+
+    @Patch('reorder')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: '[Admin] Reorder blog posts' })
+    reorder(@Body() dto: ReorderBlogDto) {
+        return this.service.reorder(dto.items);
     }
 }
