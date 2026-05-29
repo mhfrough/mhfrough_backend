@@ -76,7 +76,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
         // Never expose internal error details to the client for 5xx
         const clientMessage = status >= 500 ? 'Internal server error' : message;
 
+        // Preserve extra fields from the original HttpException body (e.g. warning, error, attemptsLeft)
+        // so clients can handle structured error payloads (like login lockout warnings).
+        const extraFields =
+            status < 500 && exception instanceof HttpException && typeof rawMessage === 'object' && rawMessage !== null
+                ? rawMessage as Record<string, unknown>
+                : {};
+
         response.status(status).json({
+            ...extraFields,
             statusCode: status,
             message: clientMessage,
             timestamp: new Date().toISOString(),
