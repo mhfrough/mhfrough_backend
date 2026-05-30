@@ -7,6 +7,7 @@ import { VisitorSession } from './visitor-session.entity';
 import { PageView } from './page-view.entity';
 import { PingVisitorDto } from './dto/ping-visitor.dto';
 import { LeavePageDto } from './dto/leave-page.dto';
+import { EventsGateway } from '../events/events.gateway';
 
 /** 30 minutes of inactivity starts a new session */
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
@@ -41,6 +42,7 @@ export class VisitorsService {
     constructor(
         @InjectRepository(VisitorSession) private readonly sessions: Repository<VisitorSession>,
         @InjectRepository(PageView) private readonly pageViews: Repository<PageView>,
+        private readonly events: EventsGateway,
     ) { }
 
     async ping(dto: PingVisitorDto, rawIp: string, userAgent: string): Promise<{ sessionId: string }> {
@@ -88,6 +90,8 @@ export class VisitorsService {
                     lastSeenAt: new Date(),
                 }),
             );
+            // Notify admin room of the new visitor session
+            this.events.emitToAdmin('visitor:session_created', session);
         }
 
         // Record page view

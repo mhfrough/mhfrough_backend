@@ -45,6 +45,20 @@ export class AdminSettings {
     @Column({ default: true })
     showFooterTagline: boolean;
 
+    // ── Widget API Keys ──────────────────────────────────────────────────────
+    @Column({ nullable: true, type: 'varchar', length: 200 })
+    weatherApiKey: string | null;
+
+    @Column({ nullable: true, type: 'varchar', length: 200 })
+    goldApiKey: string | null;
+
+    @Column({ nullable: true, type: 'varchar', length: 200 })
+    currencyApiKey: string | null;
+
+    /** City / location used for weather queries */
+    @Column({ default: 'Karachi', type: 'varchar', length: 100 })
+    weatherCity: string;
+
     @UpdateDateColumn()
     updatedAt: Date;
 }

@@ -65,4 +65,30 @@ export class UpdateSettingsDto {
     @IsOptional()
     @IsBoolean()
     showFooterTagline?: boolean;
+
+    // ── Widget API Keys ───────────────────────────────────────────────────────
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(200)
+    weatherApiKey?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(200)
+    goldApiKey?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(200)
+    currencyApiKey?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    weatherCity?: string;
 }

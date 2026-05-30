@@ -38,8 +38,15 @@ export class AdminSettingsController {
 
     @Get()
     @ApiOperation({ summary: 'Get admin settings' })
-    getSettings() {
-        return this.settingsService.getSettings();
+    async getSettings() {
+        const s = await this.settingsService.getSettings();
+        return {
+            ...s,
+            // Mask API keys — return boolean presence, not the actual value
+            weatherApiKey:  s.weatherApiKey  ? '••••••••' : null,
+            goldApiKey:     s.goldApiKey     ? '••••••••' : null,
+            currencyApiKey: s.currencyApiKey ? '••••••••' : null,
+        };
     }
 
     @Patch()

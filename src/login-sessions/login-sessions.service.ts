@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { LoginSession } from './login-session.entity';
 import * as geoip from 'geoip-lite';
+import { EventsGateway } from '../events/events.gateway';
 
 export function parseUserAgent(ua: string | undefined): { browser: string; os: string } {
     if (!ua) return { browser: 'Unknown', os: 'Unknown' };
@@ -29,6 +30,7 @@ export function parseUserAgent(ua: string | undefined): { browser: string; os: s
 export class LoginSessionsService {
     constructor(
         @InjectRepository(LoginSession) private readonly repo: Repository<LoginSession>,
+        private readonly events: EventsGateway,
     ) { }
 
     create(data: {
@@ -53,7 +55,10 @@ export class LoginSessionsService {
             city: geo?.city ?? null,
             isActive: true,
         });
-        return this.repo.save(session);
+        return this.repo.save(session).then(saved => {
+            this.emitSessionsUpdate(data.userId);
+            return saved;
+        });
     }
 
     findAll(): Promise<LoginSession[]> {
@@ -61,7 +66,9 @@ export class LoginSessionsService {
     }
 
     async revoke(id: string): Promise<void> {
+        const session = await this.repo.findOne({ where: { id } });
         await this.repo.update(id, { isActive: false, revokedAt: new Date() });
+        if (session?.userId) this.emitSessionsUpdate(session.userId);
     }
 
     async revokeAllForUser(userId: string): Promise<void> {
@@ -71,6 +78,7 @@ export class LoginSessionsService {
             .set({ isActive: false, revokedAt: new Date() })
             .where('userId = :userId AND isActive = true', { userId })
             .execute();
+        this.emitSessionsUpdate(userId);
     }
 
     async revokeAllExcept(userId: string, excludeSessionId: string): Promise<void> {
@@ -80,6 +88,7 @@ export class LoginSessionsService {
             .set({ isActive: false, revokedAt: new Date() })
             .where('userId = :userId AND isActive = true AND id != :excludeSessionId', { userId, excludeSessionId })
             .execute();
+        this.emitSessionsUpdate(userId);
     }
 
     async clearRevoked(userId: string): Promise<void> {
@@ -89,5 +98,11 @@ export class LoginSessionsService {
             .from(LoginSession)
             .where('userId = :userId AND isActive = false', { userId })
             .execute();
+        this.emitSessionsUpdate(userId);
+    }
+
+    private async emitSessionsUpdate(userId: string): Promise<void> {
+        const sessions = await this.repo.find({ where: { userId }, order: { loginAt: 'DESC' } });
+        this.events.emitToAdmin('session:list_updated', sessions);
     }
 }

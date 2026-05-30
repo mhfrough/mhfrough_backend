@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ActivityLog } from './activity-log.entity';
+import { EventsGateway } from '../events/events.gateway';
 
 export interface LogPayload {
     action: string;
@@ -21,13 +22,15 @@ export class ActivityLogService {
     constructor(
         @InjectRepository(ActivityLog)
         private readonly repo: Repository<ActivityLog>,
+        private readonly events: EventsGateway,
     ) { }
 
     async log(payload: LogPayload): Promise<void> {
         try {
-            await this.repo.save(
+            const entry = await this.repo.save(
                 this.repo.create({ ...payload, status: payload.status ?? 'success' }),
             );
+            this.events.emitToAdmin('activity:log_created', entry);
         } catch (err) {
             this.logger.error('Failed to write activity log', err);
         }
