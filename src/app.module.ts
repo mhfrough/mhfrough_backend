@@ -25,6 +25,7 @@ import { LoginSessionsModule } from './login-sessions/login-sessions.module';
 import { GalleryModule } from './gallery/gallery.module';
 import { SiteSettingsModule } from './site-settings/site-settings.module';
 import { TickerModule } from './ticker/ticker.module';
+import { VisitorsModule } from './visitors/visitors.module';
 
 @Module({
   imports: [
@@ -39,7 +40,7 @@ import { TickerModule } from './ticker/ticker.module';
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        autoLoadEntities: true,
         synchronize: config.get('NODE_ENV') !== 'production',
         logging: config.get('NODE_ENV') === 'development',
       }),
@@ -64,6 +65,7 @@ import { TickerModule } from './ticker/ticker.module';
     GalleryModule,
     SiteSettingsModule,
     TickerModule,
+    VisitorsModule,
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',
