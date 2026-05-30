@@ -6,7 +6,7 @@ import { WidgetsService } from './widgets.service';
 @ApiTags('Widgets')
 @Controller('widgets')
 export class WidgetsController {
-    constructor(private readonly widgetsService: WidgetsService) {}
+    constructor(private readonly widgetsService: WidgetsService) { }
 
     // ── Public data endpoints (data only, no keys exposed) ───────────────────
 

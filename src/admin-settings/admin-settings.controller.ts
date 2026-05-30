@@ -43,8 +43,8 @@ export class AdminSettingsController {
         return {
             ...s,
             // Mask API keys — return boolean presence, not the actual value
-            weatherApiKey:  s.weatherApiKey  ? '••••••••' : null,
-            goldApiKey:     s.goldApiKey     ? '••••••••' : null,
+            weatherApiKey: s.weatherApiKey ? '••••••••' : null,
+            goldApiKey: s.goldApiKey ? '••••••••' : null,
             currencyApiKey: s.currencyApiKey ? '••••••••' : null,
         };
     }
