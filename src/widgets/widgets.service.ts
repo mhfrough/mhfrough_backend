@@ -5,9 +5,11 @@ import { WidgetCache } from './widget-cache.entity';
 import { AdminSettingsService } from '../admin-settings/admin-settings.service';
 
 // ── TTLs (ms) ────────────────────────────────────────────────────────────────
-const WEATHER_TTL = 60 * 60 * 1000;         // 1 hour
-const GOLD_TTL = 8 * 60 * 60 * 1000;     // 8 hours — 3 calls/day via GoldAPI
-const USD_TTL = 30 * 60 * 1000;         // 30 minutes
+// Keep cache TTLs in milliseconds here — controls how often external APIs are
+// called and when cached widget data is considered stale.
+const WEATHER_TTL = 15 * 60 * 1000;         // 15 minutes
+const GOLD_TTL = 8 * 60 * 60 * 1000;        // 8 hours — ~3 calls/day via GoldAPI
+const USD_TTL = 30 * 60 * 1000;             // 30 minutes
 
 // ── Normalised condition keys ─────────────────────────────────────────────────
 function normaliseCondition(text: string): string {
