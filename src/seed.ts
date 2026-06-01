@@ -15,7 +15,7 @@ const AppDataSource = new DataSource({
     host: process.env.DB_HOST || 'localhost',
     port: +(process.env.DB_PORT || 5432),
     username: process.env.DB_USERNAME || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
+    password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME || 'mhfrough_db',
     entities: [User],
     synchronize: true,
@@ -32,10 +32,10 @@ async function seed() {
         process.exit(0);
     }
 
-    // Prompt securely — password is read from env var ADMIN_SEED_PASSWORD
-    const rawPassword = process.env.ADMIN_SEED_PASSWORD;
+    // Prompt securely — password is read from env var ADMIN_PASSWORD
+    const rawPassword = process.env.ADMIN_PASSWORD;
     if (!rawPassword) {
-        console.error('Set ADMIN_SEED_PASSWORD env var before seeding.');
+        console.error('Set ADMIN_PASSWORD env var before seeding.');
         process.exit(1);
     }
 
