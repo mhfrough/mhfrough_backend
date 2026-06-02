@@ -13,8 +13,12 @@ async function bootstrap() {
   }));
   app.use(cookieParser(process.env.COOKIE_SECRET));
 
+  const allowedOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+    : ['http://localhost:4223'];
+
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:4223',
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
