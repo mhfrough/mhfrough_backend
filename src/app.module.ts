@@ -43,6 +43,8 @@ import { WidgetsModule } from './widgets/widgets.module';
         database: config.get('DB_NAME'),
         autoLoadEntities: true,
         synchronize: config.get('NODE_ENV') !== 'production',
+        migrationsRun: config.get('NODE_ENV') === 'production',
+        migrations: [__dirname + '/migrations/*.js'],
         logging: config.get('NODE_ENV') === 'development',
       }),
     }),

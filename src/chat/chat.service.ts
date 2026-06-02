@@ -31,7 +31,11 @@ export class ChatService implements OnModuleInit {
     ) { }
 
     async onModuleInit() {
-        await this.seedSettings();
+        try {
+            await this.seedSettings();
+        } catch (err) {
+            console.error('[ChatService] seedSettings failed:', (err as Error)?.message ?? err);
+        }
     }
 
     private async seedSettings() {
