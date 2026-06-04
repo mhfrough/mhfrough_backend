@@ -11,17 +11,23 @@ const WEATHER_TTL = 15 * 60 * 1000;         // 15 minutes
 const GOLD_TTL = 8 * 60 * 60 * 1000;        // 8 hours — ~3 calls/day via GoldAPI
 const USD_TTL = 30 * 60 * 1000;             // 30 minutes
 
-// ── Normalised condition keys ─────────────────────────────────────────────────
-function normaliseCondition(text: string): string {
-    const t = text.toLowerCase();
-    if (t.includes('thunder')) return 'thunderstorm';
-    if (t.includes('sleet') || t.includes('ice pellet')) return 'sleet';
-    if (t.includes('snow') || t.includes('blizzard') || t.includes('ice')) return 'snow';
-    if (t.includes('rain') || t.includes('drizzle') || t.includes('shower')) return 'rain';
-    if (t.includes('fog') || t.includes('mist') || t.includes('haze')) return 'fog';
-    if (t.includes('overcast') || t.includes('cloudy')) return 'cloudy';
-    if (t.includes('partly')) return 'partly-cloudy';
-    if (t.includes('sunny') || t.includes('clear')) return 'sunny';
+// ── WeatherAPI condition code → icon key ──────────────────────────────────────
+type WeatherIcon = 'sunny' | 'cloudy' | 'fog' | 'rain' | 'snow' | 'thunderstorm';
+
+function getWeatherIcon(code: number): WeatherIcon {
+    if ([1000].includes(code)) return 'sunny';
+
+    if ([1030, 1135, 1147].includes(code)) return 'fog';
+
+    if ([1087, 1273, 1276, 1279, 1282].includes(code)) return 'thunderstorm';
+
+    if ([1066, 1114, 1117, 1210, 1213, 1216, 1219, 1222, 1225,
+        1237, 1249, 1252, 1255, 1258, 1261, 1264].includes(code)) return 'snow';
+
+    if ([1063, 1069, 1072, 1150, 1153, 1168, 1171,
+        1180, 1183, 1186, 1189, 1192, 1195,
+        1198, 1201, 1240, 1243, 1246].includes(code)) return 'rain';
+
     return 'cloudy';
 }
 
@@ -79,7 +85,7 @@ export class WidgetsService {
 
             const data: Record<string, unknown> = {
                 temp: Math.round(cur['temp_c'] as number),
-                condition: normaliseCondition((cond['text'] as string) ?? ''),
+                condition: getWeatherIcon(cond['code'] as number),
                 conditionText: cond['text'] as string,
                 location: city,
                 humidity: cur['humidity'] as number,
