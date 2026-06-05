@@ -1,11 +1,13 @@
 import { Injectable, UnauthorizedException, HttpException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/user.entity';
 import { ActivityLogService } from '../activity-log/activity-log.service';
 import { AdminSettingsService } from '../admin-settings/admin-settings.service';
 import { LoginSessionsService } from '../login-sessions/login-sessions.service';
+import { EventsGateway } from '../events/events.gateway';
 
 @Injectable()
 export class AuthService {
@@ -15,6 +17,7 @@ export class AuthService {
         private readonly activityLog: ActivityLogService,
         private readonly adminSettings: AdminSettingsService,
         private readonly loginSessions: LoginSessionsService,
+        private readonly gateway: EventsGateway,
     ) { }
 
     async validateUser(email: string, password: string, ip = 'unknown'): Promise<User> {
@@ -189,5 +192,49 @@ export class AuthService {
         if (!user) throw new UnauthorizedException();
         const { passwordHash: _, ...profile } = user;
         return profile;
+    }
+
+    async unlockAccount(providedSecret: string, ip: string): Promise<{ message: string }> {
+        const expected = process.env.UNLOCK_SECRET ?? '';
+        const logFailure = () =>
+            this.activityLog.log({
+                action: 'auth:unlock_failed',
+                resource: 'auth',
+                description: `Account unlock attempt with invalid secret. IP: ${ip}`,
+                status: 'error',
+                errorMessage: 'Invalid unlock secret',
+                metadata: { ip },
+            });
+
+        // Reject immediately if env var is not configured
+        if (!expected) {
+            await logFailure();
+            throw new UnauthorizedException('Invalid secret');
+        }
+
+        // Constant-time comparison to prevent timing attacks
+        const a = Buffer.from(providedSecret);
+        const b = Buffer.from(expected);
+        const match = a.length === b.length && crypto.timingSafeEqual(a, b);
+
+        if (!match) {
+            await logFailure();
+            throw new UnauthorizedException('Invalid secret');
+        }
+
+        const email = process.env.ADMIN_EMAIL ?? 'mhfrough@yahoo.com';
+        await this.usersService.unlockByEmail(email);
+
+        await this.activityLog.log({
+            action: 'auth:account_unlocked',
+            resource: 'auth',
+            description: `Account unlocked via secret endpoint. Email: ${email}. IP: ${ip}.`,
+            status: 'success',
+            metadata: { email, ip },
+        });
+
+        this.gateway.emitToAll('account_unlocked', { email });
+
+        return { message: 'Account unlocked successfully' };
     }
 }

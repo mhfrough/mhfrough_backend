@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Res, Get, UseGuards, Req, HttpCode } from '@nestjs/common';
+import { Controller, Post, Body, Res, Get, UseGuards, Req, HttpCode, Headers } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import type { Response, Request } from 'express';
@@ -36,5 +36,19 @@ export class AuthController {
     @ApiOperation({ summary: 'Get logged-in admin profile' })
     profile(@Req() req: Request & { user: any }) {
         return this.authService.profile(req.user.id);
+    }
+
+    @Post('unlock-account')
+    @HttpCode(200)
+    @Throttle({ default: { ttl: 3_600_000, limit: 3 } })
+    @ApiOperation({ summary: 'Unlock admin account (requires X-Unlock-Secret header)' })
+    unlockAccount(
+        @Headers('x-unlock-secret') secret: string,
+        @Req() req: Request,
+    ) {
+        const ip =
+            ((req.headers as Record<string, string>)['x-forwarded-for'])
+                ?.split(',')[0]?.trim() ?? (req as any).ip ?? 'unknown';
+        return this.authService.unlockAccount(secret ?? '', ip);
     }
 }

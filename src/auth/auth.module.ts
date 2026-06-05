@@ -9,6 +9,7 @@ import { UsersModule } from '../users/users.module';
 import { ActivityLogModule } from '../activity-log/activity-log.module';
 import { AdminSettingsModule } from '../admin-settings/admin-settings.module';
 import { LoginSessionsModule } from '../login-sessions/login-sessions.module';
+import { EventsModule } from '../events/events.module';
 
 @Module({
     imports: [
@@ -16,6 +17,7 @@ import { LoginSessionsModule } from '../login-sessions/login-sessions.module';
         ActivityLogModule,
         AdminSettingsModule,
         LoginSessionsModule,
+        EventsModule,
         PassportModule,
         JwtModule.registerAsync({
             imports: [ConfigModule],

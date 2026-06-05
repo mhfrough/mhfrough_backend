@@ -12,6 +12,8 @@
     "start:dev": "nest start --watch",
     "seed": "ts-node src/seed.ts",
     "unlock:account": "ts-node src/unlock-account.ts",
+    "unlock:local": "ts-node src/unlock-via-api.ts http://localhost:3023",
+    "unlock:prod": "ts-node src/unlock-via-api.ts https://mhfrough-backend.onrender.com",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "migration:run": "typeorm migration:run",
