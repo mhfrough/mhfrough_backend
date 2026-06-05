@@ -42,7 +42,7 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 3023;
   await app.listen(port);
-  
+
   // Seed admin user
   await seedAdminUser();
 
