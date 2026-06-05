@@ -1,6 +1,7 @@
 /**
  * Run once to seed the admin user:
  *   npx ts-node src/seed.ts
+ * Or called automatically on app startup via main.ts
  */
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
@@ -21,29 +22,44 @@ const AppDataSource = new DataSource({
     synchronize: true,
 });
 
-async function seed() {
-    await AppDataSource.initialize();
-    const userRepo = AppDataSource.getRepository(User);
+export async function seedAdminUser() {
+    try {
+        await AppDataSource.initialize();
+        const userRepo = AppDataSource.getRepository(User);
 
-    const email = process.env.ADMIN_EMAIL || 'mhfrough@yahoo.com';
-    const existing = await userRepo.findOne({ where: { email } });
-    if (existing) {
-        console.log('Admin user already exists.');
-        process.exit(0);
+        const email = process.env.ADMIN_EMAIL || 'mhfrough@yahoo.com';
+        const existing = await userRepo.findOne({ where: { email } });
+        if (existing) {
+            console.log('✓ Admin user already exists.');
+            return;
+        }
+
+        const rawPassword = process.env.ADMIN_PASSWORD;
+        if (!rawPassword) {
+            console.warn('⚠ ADMIN_PASSWORD env var not set. Skipping admin user creation.');
+            return;
+        }
+
+        const passwordHash = await bcrypt.hash(rawPassword, 12);
+        const admin = userRepo.create({ email, passwordHash, role: UserRole.ADMIN });
+        await userRepo.save(admin);
+        console.log(`✅ Admin user created: ${email}`);
+    } catch (err) {
+        console.error('❌ Seed error:', err);
     }
-
-    // Prompt securely — password is read from env var ADMIN_PASSWORD
-    const rawPassword = process.env.ADMIN_PASSWORD;
-    if (!rawPassword) {
-        console.error('Set ADMIN_PASSWORD env var before seeding.');
-        process.exit(1);
-    }
-
-    const passwordHash = await bcrypt.hash(rawPassword, 12);
-    const admin = userRepo.create({ email, passwordHash, role: UserRole.ADMIN });
-    await userRepo.save(admin);
-    console.log(`✅ Admin user created: ${email}`);
-    process.exit(0);
 }
 
-seed().catch((err) => { console.error(err); process.exit(1); });
+// Standalone script execution
+async function seed() {
+    try {
+        await seedAdminUser();
+        process.exit(0);
+    } catch (err) {
+        console.error(err);
+        process.exit(1);
+    }
+}
+
+if (require.main === module) {
+    seed();
+}

@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { seedAdminUser } from './seed';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 
@@ -41,6 +42,10 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 3023;
   await app.listen(port);
+  
+  // Seed admin user
+  await seedAdminUser();
+
   console.log(`🚀 Backend running on http://localhost:${port}/api/v1`);
   console.log(`📚 Swagger docs  → http://localhost:${port}/api/docs`);
 }
