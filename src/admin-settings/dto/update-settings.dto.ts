@@ -91,4 +91,42 @@ export class UpdateSettingsDto {
     @IsString()
     @MaxLength(100)
     weatherCity?: string;
+
+    // ── AI Chat Auto-Reply ─────────────────────────────────────────────────
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(500)
+    geminiApiKey?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsBoolean()
+    aiEnabled?: boolean;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(50)
+    aiTone?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    aiInstruction?: string;
+
+    @ApiPropertyOptional({ minimum: 500, maximum: 10000 })
+    @IsOptional()
+    @IsInt()
+    @Min(500)
+    @Max(10000)
+    aiAutoReplyDelay?: number;
+
+    @ApiPropertyOptional({ minimum: 100, maximum: 2000 })
+    @IsOptional()
+    @IsInt()
+    @Min(100)
+    @Max(2000)
+    aiMaxResponseLength?: number;
 }

@@ -59,6 +59,28 @@ export class AdminSettings {
     @Column({ default: 'Karachi', type: 'varchar', length: 100 })
     weatherCity: string;
 
+    // ── AI Chat Auto-Reply ───────────────────────────────────────────────────
+    @Column({ nullable: true, type: 'varchar', length: 500 })
+    geminiApiKey: string | null;
+
+    @Column({ default: false })
+    aiEnabled: boolean;
+
+    /** professional | friendly | casual | technical */
+    @Column({ default: 'professional', type: 'varchar', length: 50 })
+    aiTone: string;
+
+    @Column({ nullable: true, type: 'text' })
+    aiInstruction: string | null;
+
+    /** Milliseconds to wait before sending the AI reply */
+    @Column({ default: 1500 })
+    aiAutoReplyDelay: number;
+
+    /** Maximum characters the AI reply should be (enforced via prompt) */
+    @Column({ default: 300 })
+    aiMaxResponseLength: number;
+
     @UpdateDateColumn()
     updatedAt: Date;
 }

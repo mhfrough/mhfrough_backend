@@ -118,8 +118,9 @@ export class ChatService implements OnModuleInit {
         sender: 'visitor' | 'admin',
         messageType: 'text' | 'audio' = 'text',
         audioUrl?: string,
+        isBot = false,
     ): Promise<ChatMessage> {
-        const msg = this.messages.create({ sessionId, content, sender, messageType, audioUrl: audioUrl ?? null });
+        const msg = this.messages.create({ sessionId, content, sender, messageType, audioUrl: audioUrl ?? null, isBot });
         const saved = await this.messages.save(msg);
         await this.sessions.update(sessionId, { lastActivityAt: new Date() });
         return saved;

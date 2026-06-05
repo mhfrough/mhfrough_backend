@@ -6,6 +6,8 @@ import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
 import { FcmService } from '../fcm/fcm.service';
 import { PushNotifSource } from '../fcm/push-notification-log.entity';
+import { AiService } from '../ai/ai.service';
+import { AdminSettingsService } from '../admin-settings/admin-settings.service';
 
 interface JoinPayload { sessionId?: string; visitorName?: string; }
 interface MessagePayload { sessionId: string; content: string; }
@@ -31,7 +33,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     /** socketId -> true if admin */
     private adminSockets = new Set<string>();
 
-    constructor(private readonly chatService: ChatService, private readonly fcm: FcmService) { }
+    constructor(
+        private readonly chatService: ChatService,
+        private readonly fcm: FcmService,
+        private readonly aiService: AiService,
+        private readonly adminSettings: AdminSettingsService,
+    ) { }
 
     handleConnection(client: Socket) {
         // connection established; role determined on first event
@@ -105,7 +112,48 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         const sessions = await this.chatService.getAllSessions();
         this.server.to('admins').emit('sessions:update', sessions);
 
+        // Fire-and-forget AI auto-reply
+        this.tryAiAutoReply(sessionId, payload.content);
+
         return msg;
+    }
+
+    private async tryAiAutoReply(sessionId: string, visitorMessage: string): Promise<void> {
+        try {
+            const settings = await this.adminSettings.getSettings();
+            if (!settings.aiEnabled || !settings.geminiApiKey) return;
+
+            const delay = Math.max(500, settings.aiAutoReplyDelay ?? 1500);
+            await new Promise(r => setTimeout(r, delay));
+
+            // Get conversation history (all messages except the latest visitor message)
+            const messages = await this.chatService.getMessages(sessionId);
+            const history = messages.slice(0, -1)
+                .filter(m => m.messageType === 'text')
+                .map(m => ({
+                    role: m.sender === 'visitor' ? 'user' as const : 'model' as const,
+                    text: m.content,
+                }));
+
+            const reply = await this.aiService.generateReply({
+                apiKey: settings.geminiApiKey,
+                tone: settings.aiTone ?? 'professional',
+                instruction: settings.aiInstruction ?? '',
+                history,
+                message: visitorMessage,
+                maxResponseLength: settings.aiMaxResponseLength ?? 300,
+            });
+
+            if (!reply) return;
+
+            const aiMsg = await this.chatService.saveMessage(sessionId, reply, 'admin', 'text', undefined, true);
+            this.server.to(`session:${sessionId}`).emit('message:new', aiMsg);
+
+            const updatedSessions = await this.chatService.getAllSessions();
+            this.server.to('admins').emit('sessions:update', updatedSessions);
+        } catch (err) {
+            console.error('[ChatGateway] AI auto-reply failed:', (err as Error)?.message ?? err);
+        }
     }
 
     @SubscribeMessage('visitor:typing')

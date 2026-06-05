@@ -46,6 +46,7 @@ export class AdminSettingsController {
             weatherApiKey: s.weatherApiKey ? '••••••••' : null,
             goldApiKey: s.goldApiKey ? '••••••••' : null,
             currencyApiKey: s.currencyApiKey ? '••••••••' : null,
+            geminiApiKey: s.geminiApiKey ? '••••••••' : null,
         };
     }
 
