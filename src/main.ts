@@ -9,6 +9,8 @@ import helmet from 'helmet';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.set('trust proxy', 1);
+
   app.use(helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
   }));

@@ -151,10 +151,11 @@ export class AuthService {
         const payload = { sub: user.id, email: user.email, role: user.role, sid: session.id };
         const token = this.jwtService.sign(payload, { expiresIn: `${cookieMaxAgeDays}d` });
 
+        const isProd = process.env.NODE_ENV === 'production';
         const cookieOptions: Record<string, unknown> = {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            secure: isProd,
+            sameSite: isProd ? 'none' : 'lax',
         };
         if (rememberMe) {
             cookieOptions.maxAge = cookieMaxAgeDays * 24 * 60 * 60 * 1000;
@@ -163,8 +164,8 @@ export class AuthService {
         res.cookie('access_token', token, cookieOptions);
         res.cookie('admin_rm', rememberMe ? '1' : '0', {
             httpOnly: false,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            secure: isProd,
+            sameSite: isProd ? 'none' : 'lax',
             ...(rememberMe ? { maxAge: cookieMaxAgeDays * 24 * 60 * 60 * 1000 } : {}),
         });
 
@@ -182,8 +183,10 @@ export class AuthService {
         if (sessionId) {
             await this.loginSessions.revoke(sessionId);
         }
-        res.clearCookie('access_token');
-        res.clearCookie('admin_rm');
+        const isProd = process.env.NODE_ENV === 'production';
+        const clearOpts = { secure: isProd, sameSite: isProd ? 'none' : 'lax', path: '/' };
+        res.clearCookie('access_token', clearOpts);
+        res.clearCookie('admin_rm', clearOpts);
         return { message: 'Logged out' };
     }
 
