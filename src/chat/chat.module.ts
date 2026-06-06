@@ -9,6 +9,7 @@ import { ChatController } from './chat.controller';
 import { FcmModule } from '../fcm/fcm.module';
 import { AiModule } from '../ai/ai.module';
 import { AdminSettingsModule } from '../admin-settings/admin-settings.module';
+import { SupabaseStorageModule } from '../supabase-storage/supabase-storage.module';
 
 @Module({
     imports: [
@@ -16,6 +17,7 @@ import { AdminSettingsModule } from '../admin-settings/admin-settings.module';
         FcmModule,
         AiModule,
         AdminSettingsModule,
+        SupabaseStorageModule,
     ],
     providers: [ChatService, ChatGateway],
     controllers: [ChatController],

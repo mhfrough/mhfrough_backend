@@ -3,13 +3,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './user.entity';
+import { SupabaseStorageService } from '../supabase-storage/supabase-storage.service';
 
 /** Default fallback; overridden dynamically by AdminSettings */
 export const MAX_LOGIN_ATTEMPTS = 3;
 
 @Injectable()
 export class UsersService {
-    constructor(@InjectRepository(User) private readonly repo: Repository<User>) { }
+    constructor(
+        @InjectRepository(User) private readonly repo: Repository<User>,
+        private readonly storage: SupabaseStorageService,
+    ) { }
 
     findByEmail(email: string): Promise<User | null> {
         return this.repo.findOne({ where: { email } });
@@ -61,6 +65,13 @@ export class UsersService {
         'displayName' | 'bio' | 'aboutHtml' | 'avatarUrl' | 'contactEmail' | 'phone' | 'location' |
         'timezone' | 'website' | 'github' | 'linkedin' | 'twitter' |
         'instagram' | 'youtube' | 'discord' | 'stackoverflow' | 'medium' | 'dribbble' | 'socialVisibility'>>): Promise<User> {
+        if (data.avatarUrl) {
+            const current = await this.repo.findOne({ where: { id: userId } });
+            if (current?.avatarUrl && current.avatarUrl !== data.avatarUrl) {
+                await this.storage.deleteByUrl(current.avatarUrl);
+            }
+            // Logging is handled by the caller (admin-settings.controller) which has more context
+        }
         await this.repo.update(userId, data as any);
         return this.repo.findOneOrFail({ where: { id: userId } });
     }

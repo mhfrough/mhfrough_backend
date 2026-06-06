@@ -4,12 +4,14 @@ import { Repository } from 'typeorm';
 import { Blog } from './blog.entity';
 import { CreateBlogDto, UpdateBlogDto } from './dto/blog.dto';
 import { ActivityLogService } from '../activity-log/activity-log.service';
+import { SupabaseStorageService } from '../supabase-storage/supabase-storage.service';
 
 @Injectable()
 export class BlogsService {
     constructor(
         @InjectRepository(Blog) private readonly repo: Repository<Blog>,
         private readonly activityLog: ActivityLogService,
+        private readonly storage: SupabaseStorageService,
     ) { }
 
     findAll(publishedOnly = true): Promise<Blog[]> {
@@ -86,6 +88,17 @@ export class BlogsService {
 
     async update(id: string, dto: UpdateBlogDto): Promise<Blog> {
         const blog = await this.findOne(id);
+        if (dto.coverImage && dto.coverImage !== blog.coverImage) {
+            await this.storage.deleteByUrl(blog.coverImage);
+            this.activityLog.log({
+                action: 'upload:file_replaced',
+                resource: 'blog',
+                resourceId: id,
+                resourceTitle: blog.title,
+                description: `Cover image replaced for blog: "${blog.title}"`,
+                status: 'success',
+            });
+        }
         const wasPublished = blog.isPublished;
         if (dto.isPublished && !blog.publishedAt) blog.publishedAt = new Date();
         Object.assign(blog, dto);
@@ -114,13 +127,15 @@ export class BlogsService {
     async remove(id: string): Promise<void> {
         const blog = await this.findOne(id);
         const title = blog.title;
-        await this.repo.remove(blog);
+        if (blog.coverImage) {
+            await this.storage.deleteByUrl(blog.coverImage);
+        }
         this.activityLog.log({
             action: 'blog:delete',
             resource: 'blog',
             resourceId: id,
             resourceTitle: title,
-            description: title,
+            description: `Blog deleted: "${title}"${blog.coverImage ? ' — cover image removed from storage' : ''}`,
         });
     }
 }

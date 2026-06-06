@@ -7,15 +7,11 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { BlogsService } from './blogs.service';
 import { CreateBlogDto, UpdateBlogDto, UnpublishBlogDto } from './dto/blog.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { ActivityLogService } from '../activity-log/activity-log.service';
 
 @ApiTags('Blogs')
 @Controller('blogs')
 export class BlogsController {
-    constructor(
-        private readonly service: BlogsService,
-        private readonly activityLog: ActivityLogService,
-    ) { }
+    constructor(private readonly service: BlogsService) { }
 
     @Get()
     @ApiOperation({ summary: 'Get all published blog posts (paginated)' })
@@ -54,36 +50,28 @@ export class BlogsController {
     @Post()
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
-    async create(@Body() dto: CreateBlogDto) {
-        const result = await this.service.create(dto);
-        this.activityLog.log({ action: 'blog:created', resource: 'blog', description: `Blog post created: ${dto.title ?? result.id}`, status: 'success' });
-        return result;
+    create(@Body() dto: CreateBlogDto) {
+        return this.service.create(dto);
     }
 
     @Put(':id')
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
-    async update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateBlogDto) {
-        const result = await this.service.update(id, dto);
-        this.activityLog.log({ action: 'blog:updated', resource: 'blog', resourceId: id, description: `Blog post updated: ${id}`, status: 'success' });
-        return result;
+    update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateBlogDto) {
+        return this.service.update(id, dto);
     }
 
     @Patch(':id/unpublish')
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
-    async unpublish(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UnpublishBlogDto) {
-        const result = await this.service.unpublish(id, dto.adminNote);
-        this.activityLog.log({ action: 'blog:unpublished', resource: 'blog', resourceId: id, description: `Blog post unpublished: ${id}`, status: 'success' });
-        return result;
+    unpublish(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UnpublishBlogDto) {
+        return this.service.unpublish(id, dto.adminNote);
     }
 
     @Delete(':id')
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
-    async remove(@Param('id', ParseUUIDPipe) id: string) {
-        const result = await this.service.remove(id);
-        this.activityLog.log({ action: 'blog:deleted', resource: 'blog', resourceId: id, description: `Blog post deleted: ${id}`, status: 'success' });
-        return result;
+    remove(@Param('id', ParseUUIDPipe) id: string) {
+        return this.service.remove(id);
     }
 }

@@ -25,10 +25,22 @@ export class ChatMessage {
     sender: MessageSender;
 
     @Column({ type: 'varchar', default: 'text' })
-    messageType: 'text' | 'audio';
+    messageType: 'text' | 'audio' | 'file';
 
     @Column({ type: 'varchar', nullable: true, default: null })
     audioUrl: string | null;
+
+    @Column({ type: 'varchar', nullable: true, default: null })
+    fileUrl: string | null;
+
+    @Column({ type: 'varchar', nullable: true, default: null })
+    fileName: string | null;
+
+    @Column({ type: 'varchar', nullable: true, default: null })
+    fileType: string | null;
+
+    @Column({ type: 'int', nullable: true, default: null })
+    fileSize: number | null;
 
     @Column({ default: false })
     read: boolean;

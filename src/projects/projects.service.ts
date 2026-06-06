@@ -8,6 +8,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { FcmService } from '../fcm/fcm.service';
 import { PushNotifSource } from '../fcm/push-notification-log.entity';
 import { ActivityLogService } from '../activity-log/activity-log.service';
+import { SupabaseStorageService } from '../supabase-storage/supabase-storage.service';
 
 @Injectable()
 export class ProjectsService {
@@ -17,6 +18,7 @@ export class ProjectsService {
         private readonly notifications: NotificationsService,
         private readonly fcm: FcmService,
         private readonly activityLog: ActivityLogService,
+        private readonly storage: SupabaseStorageService,
     ) { }
 
     findAll(publishedOnly = true): Promise<Project[]> {
@@ -105,6 +107,17 @@ export class ProjectsService {
 
     async update(id: string, dto: UpdateProjectDto): Promise<Project> {
         const project = await this.findOne(id);
+        if (dto.thumbnail && dto.thumbnail !== project.thumbnail) {
+            await this.storage.deleteByUrl(project.thumbnail);
+            this.activityLog.log({
+                action: 'upload:file_replaced',
+                resource: 'project',
+                resourceId: id,
+                resourceTitle: project.title,
+                description: `Thumbnail replaced for project: "${project.title}"`,
+                status: 'success',
+            });
+        }
         Object.assign(project, dto);
         const saved = await this.repo.save(project);
         this.events.emitToAll('project:updated', saved);
@@ -152,6 +165,9 @@ export class ProjectsService {
     async remove(id: string): Promise<void> {
         const project = await this.findOne(id);
         const title = project.title;
+        if (project.thumbnail) {
+            await this.storage.deleteByUrl(project.thumbnail);
+        }
         await this.repo.remove(project);
         this.events.emitToAll('project:deleted', { id });
         this.activityLog.log({
@@ -159,7 +175,7 @@ export class ProjectsService {
             resource: 'project',
             resourceId: id,
             resourceTitle: title,
-            description: title,
+            description: `Project deleted: "${title}"${project.thumbnail ? ' — thumbnail removed from storage' : ''}`,
         });
     }
 }

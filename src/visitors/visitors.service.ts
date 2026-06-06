@@ -5,8 +5,10 @@ import { createHash } from 'crypto';
 import * as geoip from 'geoip-lite';
 import { VisitorSession } from './visitor-session.entity';
 import { PageView } from './page-view.entity';
+import { VisitorEvent } from './visitor-event.entity';
 import { PingVisitorDto } from './dto/ping-visitor.dto';
 import { LeavePageDto } from './dto/leave-page.dto';
+import { TrackEventDto } from './dto/track-event.dto';
 import { EventsGateway } from '../events/events.gateway';
 
 /** 30 minutes of inactivity starts a new session */
@@ -42,15 +44,18 @@ export class VisitorsService {
     constructor(
         @InjectRepository(VisitorSession) private readonly sessions: Repository<VisitorSession>,
         @InjectRepository(PageView) private readonly pageViews: Repository<PageView>,
+        @InjectRepository(VisitorEvent) private readonly visitorEvents: Repository<VisitorEvent>,
         private readonly events: EventsGateway,
     ) { }
 
+    async findOne(sessionId: string): Promise<VisitorSession | null> {
+        return this.sessions.findOne({ where: { id: sessionId } });
+    }
+
     async ping(dto: PingVisitorDto, rawIp: string, userAgent: string): Promise<{ sessionId: string }> {
-        // Normalize IP for geo lookup
         const ip = rawIp === '::1' ? '127.0.0.1' : rawIp?.startsWith('::ffff:') ? rawIp.slice(7) : rawIp;
         const fingerprint = createHash('sha256').update(`${ip}|${userAgent}`).digest('hex');
 
-        // Try to reuse an existing unexpired session
         let session: VisitorSession | null = null;
         if (dto.sessionId) {
             session = await this.sessions.findOne({ where: { id: dto.sessionId, fingerprint } });
@@ -60,7 +65,6 @@ export class VisitorsService {
             }
         }
 
-        // Create a new session if needed
         if (!session) {
             const ipVersion = ip.includes(':') ? 'IPv6' : 'IPv4';
             const geo = geoip.lookup(ip);
@@ -90,16 +94,13 @@ export class VisitorsService {
                     lastSeenAt: new Date(),
                 }),
             );
-            // Notify admin room of the new visitor session
             this.events.emitToAdmin('visitor:session_created', session);
         }
 
-        // Record page view
         await this.pageViews.save(
             this.pageViews.create({ sessionId: session.id, path: dto.path ?? null }),
         );
 
-        // Update session counters
         const pageViewCount = session.pageViewCount + 1;
         const sessionDurationMs = Date.now() - new Date(session.startedAt).getTime();
 
@@ -108,6 +109,13 @@ export class VisitorsService {
             bounced: pageViewCount <= 1,
             sessionDurationMs,
             lastSeenAt: new Date(),
+        });
+
+        // Notify admin of which page this visitor is currently on
+        this.events.emitToAdmin('visitor:page_view', {
+            sessionId: session.id,
+            path: dto.path ?? null,
+            timestamp: new Date().toISOString(),
         });
 
         return { sessionId: session.id };
@@ -130,6 +138,58 @@ export class VisitorsService {
                 lastSeenAt: new Date(),
             });
         }
+        this.events.emitToAdmin('visitor:left', { sessionId: dto.sessionId });
+    }
+
+    async trackEvent(dto: TrackEventDto): Promise<void> {
+        // Only track if session exists (ignore orphan events)
+        const session = await this.sessions.findOne({ where: { id: dto.sessionId } });
+        if (!session) return;
+
+        await this.visitorEvents.save(
+            this.visitorEvents.create({
+                sessionId: dto.sessionId,
+                eventName: dto.eventName,
+                path: dto.path ?? null,
+                metadata: dto.metadata ?? null,
+            }),
+        );
+
+        this.events.emitToAdmin('visitor:event', {
+            sessionId: dto.sessionId,
+            eventName: dto.eventName,
+            path: dto.path ?? null,
+            metadata: dto.metadata ?? null,
+            timestamp: new Date().toISOString(),
+        });
+    }
+
+    async deleteSession(sessionId: string): Promise<void> {
+        await this.visitorEvents.delete({ sessionId });
+        await this.pageViews.delete({ sessionId });
+        await this.sessions.delete({ id: sessionId });
+    }
+
+    async clearAll(): Promise<void> {
+        await this.visitorEvents.query('TRUNCATE visitor_events, page_views, visitor_sessions RESTART IDENTITY CASCADE');
+        this.events.emitToAdmin('visitor:cleared', {});
+    }
+
+    async getJourney(sessionId: string): Promise<{
+        pageViews: PageView[];
+        events: VisitorEvent[];
+    }> {
+        const [pageViews, events] = await Promise.all([
+            this.pageViews.find({
+                where: { sessionId },
+                order: { createdAt: 'ASC' },
+            }),
+            this.visitorEvents.find({
+                where: { sessionId },
+                order: { createdAt: 'ASC' },
+            }),
+        ]);
+        return { pageViews, events };
     }
 
     async findAll(
@@ -202,6 +262,26 @@ export class VisitorsService {
             .orderBy("DATE_TRUNC('day', s.startedAt AT TIME ZONE 'UTC')", 'ASC')
             .getRawMany();
 
+        const topPages = await this.pageViews
+            .createQueryBuilder('pv')
+            .select("SPLIT_PART(pv.path, '?', 1)", 'path')
+            .addSelect('COUNT(*)', 'count')
+            .addSelect('AVG(pv.timeOnPageMs)', 'avgTimeMs')
+            .where('pv.path IS NOT NULL')
+            .groupBy("SPLIT_PART(pv.path, '?', 1)")
+            .orderBy('count', 'DESC')
+            .limit(10)
+            .getRawMany();
+
+        const topEvents = await this.visitorEvents
+            .createQueryBuilder('e')
+            .select('e.eventName', 'eventName')
+            .addSelect('COUNT(*)', 'count')
+            .groupBy('e.eventName')
+            .orderBy('count', 'DESC')
+            .limit(10)
+            .getRawMany();
+
         return {
             total,
             unique,
@@ -211,6 +291,8 @@ export class VisitorsService {
             topBrowsers,
             deviceDist,
             dailySessions,
+            topPages,
+            topEvents,
         };
     }
 }

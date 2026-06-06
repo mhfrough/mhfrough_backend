@@ -38,6 +38,7 @@
     "@nestjs/throttler": "^6.5.0",
     "@nestjs/typeorm": "^11.0.1",
     "@nestjs/websockets": "^11.1.24",
+    "@supabase/supabase-js": "^2.107.0",
     "@types/geoip-lite": "^1.4.4",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",

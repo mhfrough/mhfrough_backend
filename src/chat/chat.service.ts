@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ChatSession } from './chat-session.entity';
 import { ChatMessage } from './chat-message.entity';
 import { ChatSetting } from './chat-setting.entity';
+import { SupabaseStorageService } from '../supabase-storage/supabase-storage.service';
 
 const DEFAULT_GREETINGS = [
     'Hi there! 👋 How can I help you today?',
@@ -28,6 +29,7 @@ export class ChatService implements OnModuleInit {
         private readonly messages: Repository<ChatMessage>,
         @InjectRepository(ChatSetting)
         private readonly settings: Repository<ChatSetting>,
+        private readonly storage: SupabaseStorageService,
     ) { }
 
     async onModuleInit() {
@@ -80,8 +82,12 @@ export class ChatService implements OnModuleInit {
 
     // ─── Sessions ─────────────────────────────────────────────────────────────
 
-    async createSession(visitorName?: string): Promise<ChatSession> {
-        const session = this.sessions.create({ visitorName: visitorName ?? 'Visitor', status: 'active' });
+    async createSession(visitorName?: string, visitorSessionId?: string): Promise<ChatSession> {
+        const session = this.sessions.create({
+            visitorName: visitorName ?? 'Visitor',
+            status: 'active',
+            visitorSessionId: visitorSessionId ?? null,
+        });
         return this.sessions.save(session);
     }
 
@@ -103,11 +109,16 @@ export class ChatService implements OnModuleInit {
     }
 
     async deleteSession(id: string): Promise<void> {
+        await this.storage.deleteFolder(`chat/sessions/${id}`);
         await this.sessions.delete(id);
     }
 
     async touchSession(id: string): Promise<void> {
         await this.sessions.update(id, { lastActivityAt: new Date() });
+    }
+
+    async updateSessionNotes(id: string, notes: string): Promise<void> {
+        await this.sessions.update(id, { notes: notes || null });
     }
 
     // ─── Messages ─────────────────────────────────────────────────────────────
@@ -116,11 +127,20 @@ export class ChatService implements OnModuleInit {
         sessionId: string,
         content: string,
         sender: 'visitor' | 'admin',
-        messageType: 'text' | 'audio' = 'text',
+        messageType: 'text' | 'audio' | 'file' = 'text',
         audioUrl?: string,
         isBot = false,
+        fileMeta?: { fileUrl: string; fileName: string; fileType: string; fileSize: number },
     ): Promise<ChatMessage> {
-        const msg = this.messages.create({ sessionId, content, sender, messageType, audioUrl: audioUrl ?? null, isBot });
+        const msg = this.messages.create({
+            sessionId, content, sender, messageType,
+            audioUrl: audioUrl ?? null,
+            isBot,
+            fileUrl: fileMeta?.fileUrl ?? null,
+            fileName: fileMeta?.fileName ?? null,
+            fileType: fileMeta?.fileType ?? null,
+            fileSize: fileMeta?.fileSize ?? null,
+        });
         const saved = await this.messages.save(msg);
         await this.sessions.update(sessionId, { lastActivityAt: new Date() });
         return saved;

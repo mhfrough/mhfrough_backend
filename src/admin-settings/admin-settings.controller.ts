@@ -21,6 +21,11 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ActivityLogService } from '../activity-log/activity-log.service';
 import { EventsGateway } from '../events/events.gateway';
 
+const AI_FIELDS = new Set(['aiEnabled', 'aiTone', 'aiInstruction', 'aiAutoReplyDelay', 'aiMaxResponseLength', 'geminiApiKey']);
+const SECURITY_FIELDS = new Set(['enableInactivityLogout', 'inactivityTimeoutMinutes', 'enableLoginAttemptSuspend', 'maxLoginAttempts', 'lockDurationMinutes', 'rememberMeDays', 'sessionDurationDays']);
+const WIDGET_FIELDS = new Set(['weatherApiKey', 'goldApiKey', 'currencyApiKey', 'weatherCity']);
+const BRANDING_FIELDS = new Set(['copyrightOwner', 'footerTagline', 'showFooterTagline']);
+
 @ApiTags('Admin Settings')
 @Controller('admin/settings')
 @UseGuards(JwtAuthGuard)
@@ -42,7 +47,6 @@ export class AdminSettingsController {
         const s = await this.settingsService.getSettings();
         return {
             ...s,
-            // Mask API keys — return boolean presence, not the actual value
             weatherApiKey: s.weatherApiKey ? '••••••••' : null,
             goldApiKey: s.goldApiKey ? '••••••••' : null,
             currencyApiKey: s.currencyApiKey ? '••••••••' : null,
@@ -54,12 +58,74 @@ export class AdminSettingsController {
     @ApiOperation({ summary: 'Update admin settings' })
     async updateSettings(@Body() dto: UpdateSettingsDto) {
         const result = await this.settingsService.updateSettings(dto);
-        this.activityLog.log({
-            action: 'settings:security_updated',
-            resource: 'admin_settings',
-            description: 'Security settings updated',
-            status: 'success',
-        });
+        const changed = Object.keys(dto) as (keyof UpdateSettingsDto)[];
+
+        // AI auto-reply toggle — highest priority, most specific log
+        if ('aiEnabled' in dto) {
+            this.activityLog.log({
+                action: dto.aiEnabled ? 'settings:ai_autoreply_enabled' : 'settings:ai_autoreply_disabled',
+                resource: 'admin_settings',
+                description: `AI auto-reply ${dto.aiEnabled ? 'enabled' : 'disabled'}`,
+                status: 'success',
+            });
+        }
+
+        // Gemini API key saved or cleared
+        if ('geminiApiKey' in dto) {
+            this.activityLog.log({
+                action: 'settings:gemini_key_updated',
+                resource: 'admin_settings',
+                description: dto.geminiApiKey ? 'Gemini API key saved' : 'Gemini API key cleared',
+                status: 'success',
+            });
+        }
+
+        // Other AI settings (tone, instruction, delay, length) — excluding the two above
+        const otherAiChanged = changed.filter(k => AI_FIELDS.has(k) && k !== 'aiEnabled' && k !== 'geminiApiKey');
+        if (otherAiChanged.length) {
+            this.activityLog.log({
+                action: 'settings:ai_config_updated',
+                resource: 'admin_settings',
+                description: `AI config updated: ${otherAiChanged.join(', ')}`,
+                status: 'success',
+                metadata: Object.fromEntries(otherAiChanged.map(k => [k, dto[k]])),
+            });
+        }
+
+        // Security settings
+        const securityChanged = changed.filter(k => SECURITY_FIELDS.has(k));
+        if (securityChanged.length) {
+            this.activityLog.log({
+                action: 'settings:security_updated',
+                resource: 'admin_settings',
+                description: `Security settings updated: ${securityChanged.join(', ')}`,
+                status: 'success',
+                metadata: Object.fromEntries(securityChanged.map(k => [k, dto[k]])),
+            });
+        }
+
+        // Widget API keys
+        const widgetChanged = changed.filter(k => WIDGET_FIELDS.has(k));
+        if (widgetChanged.length) {
+            this.activityLog.log({
+                action: 'settings:widget_keys_updated',
+                resource: 'admin_settings',
+                description: `Widget settings updated: ${widgetChanged.map(k => k === 'weatherCity' ? `weatherCity → ${dto.weatherCity}` : `${k} ${(dto as any)[k] ? 'set' : 'cleared'}`).join(', ')}`,
+                status: 'success',
+            });
+        }
+
+        // Footer / branding
+        const brandingChanged = changed.filter(k => BRANDING_FIELDS.has(k));
+        if (brandingChanged.length) {
+            this.activityLog.log({
+                action: 'settings:branding_updated',
+                resource: 'admin_settings',
+                description: `Branding updated: ${brandingChanged.join(', ')}`,
+                status: 'success',
+            });
+        }
+
         return result;
     }
 
@@ -154,10 +220,14 @@ export class AdminSettingsController {
     @ApiOperation({ summary: 'Update admin profile' })
     async updateProfile(@Req() req: any, @Body() dto: UpdateProfileDto) {
         const updated = await this.usersService.updateProfile(req.user.id, dto);
+        const changed = Object.keys(dto).filter(k => k !== 'socialVisibility');
+        const avatarChanged = 'avatarUrl' in dto;
         this.activityLog.log({
-            action: 'settings:profile_updated',
+            action: avatarChanged ? 'settings:avatar_updated' : 'settings:profile_updated',
             resource: 'users',
-            description: 'Admin profile updated',
+            description: avatarChanged
+                ? 'Profile avatar updated'
+                : `Profile updated: ${changed.join(', ')}`,
             status: 'success',
         });
         const { passwordHash: _, ...profile } = updated;

@@ -3,11 +3,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { GalleryItem } from './gallery-item.entity';
 import { CreateGalleryItemDto, UpdateGalleryItemDto } from './dto/gallery-item.dto';
+import { SupabaseStorageService } from '../supabase-storage/supabase-storage.service';
+import { ActivityLogService } from '../activity-log/activity-log.service';
 
 @Injectable()
 export class GalleryService {
     constructor(
         @InjectRepository(GalleryItem) private readonly repo: Repository<GalleryItem>,
+        private readonly storage: SupabaseStorageService,
+        private readonly activityLog: ActivityLogService,
     ) { }
 
     findAll(publishedOnly = true): Promise<GalleryItem[]> {
@@ -72,22 +76,67 @@ export class GalleryService {
         return item;
     }
 
-    create(dto: CreateGalleryItemDto): Promise<GalleryItem> {
-        return this.repo.save(this.repo.create(dto));
+    async create(dto: CreateGalleryItemDto): Promise<GalleryItem> {
+        const item = await this.repo.save(this.repo.create(dto));
+        this.activityLog.log({
+            action: 'gallery:created',
+            resource: 'gallery',
+            resourceId: item.id,
+            resourceTitle: item.title ?? item.id,
+            description: `Gallery item created: "${item.title ?? item.id}" (${item.mediaType})`,
+            status: 'success',
+        });
+        return item;
     }
 
     async update(id: string, dto: UpdateGalleryItemDto): Promise<GalleryItem> {
-        await this.findOne(id);
+        const existing = await this.findOne(id);
+        const mediaReplaced = dto.mediaUrl && dto.mediaUrl !== existing.mediaUrl;
+        if (mediaReplaced) {
+            await this.storage.deleteByUrl(existing.mediaUrl);
+            this.activityLog.log({
+                action: 'upload:file_replaced',
+                resource: 'gallery',
+                resourceId: id,
+                resourceTitle: existing.title ?? id,
+                description: `Gallery media replaced for "${existing.title ?? id}"`,
+                status: 'success',
+            });
+        }
         await this.repo.update(id, dto as any);
-        return this.findOne(id);
+        const updated = await this.findOne(id);
+        this.activityLog.log({
+            action: 'gallery:updated',
+            resource: 'gallery',
+            resourceId: id,
+            resourceTitle: updated.title ?? id,
+            description: `Gallery item updated: "${updated.title ?? id}"`,
+            status: 'success',
+        });
+        return updated;
     }
 
     async reorder(items: { id: string; sortOrder: number }[]): Promise<void> {
         await Promise.all(items.map(({ id, sortOrder }) => this.repo.update(id, { sortOrder })));
+        this.activityLog.log({
+            action: 'gallery:reordered',
+            resource: 'gallery',
+            description: `Gallery sort order updated for ${items.length} item(s)`,
+            status: 'success',
+        });
     }
 
     async remove(id: string): Promise<void> {
-        await this.findOne(id);
+        const item = await this.findOne(id);
+        await this.storage.deleteByUrl(item.mediaUrl);
         await this.repo.delete(id);
+        this.activityLog.log({
+            action: 'gallery:deleted',
+            resource: 'gallery',
+            resourceId: id,
+            resourceTitle: item.title ?? id,
+            description: `Gallery item deleted: "${item.title ?? id}" — media file removed from storage`,
+            status: 'success',
+        });
     }
 }

@@ -23,6 +23,14 @@ export class ChatSession {
     @UpdateDateColumn()
     lastActivityAt: Date;
 
+    /** Visitor session ID from the analytics tracker — links chat to visitor journey */
+    @Column({ type: 'varchar', nullable: true })
+    visitorSessionId: string | null;
+
+    /** Private admin notes for this session */
+    @Column({ type: 'text', nullable: true, default: null })
+    notes: string | null;
+
     @OneToMany(() => ChatMessage, (m) => m.session, { cascade: true })
     messages: ChatMessage[];
 }

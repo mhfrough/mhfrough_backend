@@ -9,11 +9,19 @@ import { PushNotifSource } from '../fcm/push-notification-log.entity';
 import { AiService } from '../ai/ai.service';
 import { AdminSettingsService } from '../admin-settings/admin-settings.service';
 
-interface JoinPayload { sessionId?: string; visitorName?: string; }
+interface JoinPayload { sessionId?: string; visitorName?: string; visitorSessionId?: string; }
 interface MessagePayload { sessionId: string; content: string; }
 interface TypingPayload { sessionId: string; isTyping: boolean; }
 interface AdminSelectPayload { sessionId: string; }
 interface AudioMessagePayload { sessionId: string; audioUrl: string; }
+interface FileMessagePayload {
+    sessionId: string;
+    fileUrl: string;
+    fileName: string;
+    fileType: string;
+    fileSize: number;
+    caption?: string;
+}
 
 @WebSocketGateway({
     cors: {
@@ -72,7 +80,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
         // Don't reuse a closed session — always create a fresh one
         if (!session || session.status === 'closed') {
-            session = await this.chatService.createSession(payload.visitorName ?? 'Visitor');
+            session = await this.chatService.createSession(
+                payload.visitorName ?? 'Visitor',
+                payload.visitorSessionId,
+            );
         }
 
         this.visitorSockets.set(client.id, session.id);
@@ -254,6 +265,24 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         const msg = await this.chatService.saveMessage(payload.sessionId, '[Audio Message]', 'admin', 'audio', payload.audioUrl);
 
         // Deliver to visitor (and other admins watching this session) — exclude sender
+        client.to(`session:${payload.sessionId}`).emit('message:new', msg);
+
+        return msg;
+    }
+
+    @SubscribeMessage('admin:file_message')
+    async onAdminFileMessage(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() payload: FileMessagePayload,
+    ) {
+        if (!this.adminSockets.has(client.id)) return;
+
+        const content = payload.caption?.trim() || `[File: ${payload.fileName}]`;
+        const msg = await this.chatService.saveMessage(
+            payload.sessionId, content, 'admin', 'file', undefined, false,
+            { fileUrl: payload.fileUrl, fileName: payload.fileName, fileType: payload.fileType, fileSize: payload.fileSize },
+        );
+
         client.to(`session:${payload.sessionId}`).emit('message:new', msg);
 
         return msg;
