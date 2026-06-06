@@ -31,6 +31,10 @@ export class ChatSession {
     @Column({ type: 'text', nullable: true, default: null })
     notes: string | null;
 
+    /** Whether the AI chatbot auto-reply is enabled for this session */
+    @Column({ default: true })
+    botEnabled: boolean;
+
     @OneToMany(() => ChatMessage, (m) => m.session, { cascade: true })
     messages: ChatMessage[];
 }

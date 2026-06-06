@@ -44,7 +44,7 @@ export class GalleryItem {
     @Column({ nullable: true })
     mimeType: string;
 
-    @Column({ nullable: true, type: 'bigint' })
+    @Column({ nullable: true, type: 'integer' })
     fileSize: number;
 
     @CreateDateColumn()

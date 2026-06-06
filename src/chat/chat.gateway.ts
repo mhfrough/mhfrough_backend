@@ -129,8 +129,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return msg;
     }
 
+    @SubscribeMessage('admin:toggle_bot')
+    async onAdminToggleBot(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() payload: { sessionId: string; enabled: boolean },
+    ) {
+        if (!this.adminSockets.has(client.id)) return;
+        await this.chatService.toggleBotEnabled(payload.sessionId, payload.enabled);
+        const sessions = await this.chatService.getAllSessions();
+        this.server.to('admins').emit('sessions:update', sessions);
+    }
+
     private async tryAiAutoReply(sessionId: string, visitorMessage: string): Promise<void> {
         try {
+            const session = await this.chatService.getSession(sessionId);
+            if (!session?.botEnabled) return;
+
             const settings = await this.adminSettings.getSettings();
             if (!settings.aiEnabled || !settings.geminiApiKey) return;
 

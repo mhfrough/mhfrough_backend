@@ -121,6 +121,10 @@ export class ChatService implements OnModuleInit {
         await this.sessions.update(id, { notes: notes || null });
     }
 
+    async toggleBotEnabled(id: string, enabled: boolean): Promise<void> {
+        await this.sessions.update(id, { botEnabled: enabled });
+    }
+
     // ─── Messages ─────────────────────────────────────────────────────────────
 
     async saveMessage(

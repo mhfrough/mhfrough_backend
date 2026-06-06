@@ -131,6 +131,13 @@ export class ChatController {
     }
 
     @UseGuards(JwtAuthGuard)
+    @Post('sessions/:id/bot')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    toggleBot(@Param('id') id: string, @Body('enabled') enabled: boolean) {
+        return this.chatService.toggleBotEnabled(id, enabled);
+    }
+
+    @UseGuards(JwtAuthGuard)
     @Post('settings')
     updateSettings(@Body() dto: UpdateChatSettingDto) {
         return this.chatService.updateSettings(dto.key, dto.value);

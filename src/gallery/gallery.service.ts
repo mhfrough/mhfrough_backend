@@ -5,6 +5,7 @@ import { GalleryItem } from './gallery-item.entity';
 import { CreateGalleryItemDto, UpdateGalleryItemDto } from './dto/gallery-item.dto';
 import { SupabaseStorageService } from '../supabase-storage/supabase-storage.service';
 import { ActivityLogService } from '../activity-log/activity-log.service';
+import { EventsGateway } from '../events/events.gateway';
 
 @Injectable()
 export class GalleryService {
@@ -12,6 +13,7 @@ export class GalleryService {
         @InjectRepository(GalleryItem) private readonly repo: Repository<GalleryItem>,
         private readonly storage: SupabaseStorageService,
         private readonly activityLog: ActivityLogService,
+        private readonly events: EventsGateway,
     ) { }
 
     findAll(publishedOnly = true): Promise<GalleryItem[]> {
@@ -86,6 +88,8 @@ export class GalleryService {
             description: `Gallery item created: "${item.title ?? item.id}" (${item.mediaType})`,
             status: 'success',
         });
+        this.events.emitToAdmin('gallery:created', item);
+        if (item.isPublished) this.events.emitToAll('gallery:published', item);
         return item;
     }
 
@@ -113,6 +117,12 @@ export class GalleryService {
             description: `Gallery item updated: "${updated.title ?? id}"`,
             status: 'success',
         });
+        this.events.emitToAdmin('gallery:updated', updated);
+        if (updated.isPublished) {
+            this.events.emitToAll('gallery:updated', updated);
+        } else if (existing.isPublished && !updated.isPublished) {
+            this.events.emitToAll('gallery:unpublished', { id });
+        }
         return updated;
     }
 
@@ -124,6 +134,8 @@ export class GalleryService {
             description: `Gallery sort order updated for ${items.length} item(s)`,
             status: 'success',
         });
+        this.events.emitToAdmin('gallery:reordered', { items });
+        this.events.emitToAll('gallery:reordered', { items });
     }
 
     async remove(id: string): Promise<void> {
@@ -138,5 +150,7 @@ export class GalleryService {
             description: `Gallery item deleted: "${item.title ?? id}" — media file removed from storage`,
             status: 'success',
         });
+        this.events.emitToAdmin('gallery:deleted', { id });
+        if (item.isPublished) this.events.emitToAll('gallery:deleted', { id });
     }
 }

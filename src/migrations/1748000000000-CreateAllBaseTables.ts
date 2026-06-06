@@ -129,7 +129,7 @@ export class CreateAllBaseTables1748000000000 implements MigrationInterface {
                 "altText" character varying,
                 "tags" text,
                 "mimeType" character varying,
-                "fileSize" bigint,
+                "fileSize" integer,
                 "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
                 "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
                 CONSTRAINT "PK_gallery_items" PRIMARY KEY ("id")
