@@ -1,6 +1,6 @@
 import { IsArray, IsString, IsOptional, ArrayNotEmpty } from 'class-validator';
 
-export class UpdateSettingsDto {
+export class UpdateChatSettingDto {
     @IsString()
     key: string;
 

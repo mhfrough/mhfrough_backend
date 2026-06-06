@@ -8,7 +8,7 @@ import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ChatService } from './chat.service';
 import { ChatGateway } from './chat.gateway';
-import { UpdateSettingsDto } from './dto/chat.dto';
+import { UpdateChatSettingDto } from './dto/chat.dto';
 import { SupabaseStorageService } from '../supabase-storage/supabase-storage.service';
 
 @Controller('chat')
@@ -132,7 +132,7 @@ export class ChatController {
 
     @UseGuards(JwtAuthGuard)
     @Post('settings')
-    updateSettings(@Body() dto: UpdateSettingsDto) {
+    updateSettings(@Body() dto: UpdateChatSettingDto) {
         return this.chatService.updateSettings(dto.key, dto.value);
     }
 }
