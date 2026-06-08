@@ -22,7 +22,7 @@ const AppDataSource = new DataSource({
 
 // Sort order is most-recent-first based on project start date
 const projects: Partial<Project>[] = [
-    // ── sortOrder: 1 ── O2Chat ──────────────────────────────────────────────
+    // ── O2Chat ──────────────────────────────────────────────
     {
         slug: 'o2chat',
         title: 'O2Chat',
@@ -36,11 +36,10 @@ O2Chat is a comprehensive customer communication platform designed to improve bu
 The platform supports seamless integrations, unlimited agents, advanced analytics, and enterprise-grade security. Additionally, O2Chat offers white-label solutions, mobile SDKs, and web API access — delivering high performance to help businesses respond faster, sell smarter, and engage customers effectively across both web and mobile platforms.`,
         techStack: ['Angular', 'Front-End Development', 'JavaScript', 'CSS', 'HTML', 'Web Design', 'SEO'],
         featured: true,
-        sortOrder: 1,
         isPublished: true,
         adminNote: 'Associated with Arittek Solutions (Pvt.) Ltd. · Sep 2024 – Present',
     },
-    // ── sortOrder: 2 ── D-Max ───────────────────────────────────────────────
+    // ── D-Max ───────────────────────────────────────────────
     {
         slug: 'd-max',
         title: 'D-Max',
@@ -52,11 +51,10 @@ The platform supports seamless integrations, unlimited agents, advanced analytic
 It streamlines the process by aggregating and structuring the extracted data before storing it efficiently in MongoDB for further analysis or integration.`,
         techStack: ['Angular', 'Front-End Development', 'Web Design', 'SEO', 'Adobe XD'],
         featured: false,
-        sortOrder: 2,
         isPublished: true,
         adminNote: 'Associated with Arittek Solutions (Pvt.) Ltd. · Jan 2024 – Present',
     },
-    // ── sortOrder: 3 ── ePractise ───────────────────────────────────────────
+    // ── ePractise ───────────────────────────────────────────
     {
         slug: 'epractise',
         title: 'ePractise',
@@ -70,11 +68,10 @@ The system automates the entire client journey from lead capture and onboarding 
 ePractise helps firms reduce manual work, standardize processes, and eliminate reliance on multiple tools. Real-time dashboards provide visibility into workloads, deadlines, WIP, utilization, and revenue. Built with enterprise-grade security, ePractise enables firms to scale efficiently while delivering a modern client experience.`,
         techStack: ['Angular', 'Front-End Development', 'Web Design', 'SEO', 'Adobe XD'],
         featured: true,
-        sortOrder: 3,
         isPublished: true,
         adminNote: 'Associated with Arittek Solutions (Pvt.) Ltd. · Jan 2024 – Present',
     },
-    // ── sortOrder: 4 ── LLC Savvy ───────────────────────────────────────────
+    // ── LLC Savvy ───────────────────────────────────────────
     {
         slug: 'llc-savvy',
         title: 'LLC Savvy',
@@ -84,11 +81,10 @@ ePractise helps firms reduce manual work, standardize processes, and eliminate r
         content: `LLC Savvy is a company formation and tax filing service that helps entrepreneurs start and grow their businesses. We offer a comprehensive suite of services, including company formation, tax filing, bookkeeping, and payroll processing in the USA.`,
         techStack: ['Angular', 'Front-End Development', 'Web Design', 'SEO', 'Adobe XD'],
         featured: false,
-        sortOrder: 4,
         isPublished: true,
         adminNote: 'Associated with Arittek Solutions (Pvt.) Ltd. · Jan 2024 – Present',
     },
-    // ── sortOrder: 5 ── TMF ─────────────────────────────────────────────────
+    // ── TMF ─────────────────────────────────────────────────
     {
         slug: 'tmf',
         title: 'TMF – Thardeep Microfinance Foundation',
@@ -102,11 +98,10 @@ Users can easily apply for loans, upload necessary documents, and track their ap
 It ensures transparency, compliance, and efficiency through real-time dashboards, automated notifications, and secure digital records, ultimately making microfinance more accessible and manageable for underserved communities.`,
         techStack: ['Angular', 'Front-End Development', 'Web Design', 'SEO', 'Adobe XD'],
         featured: false,
-        sortOrder: 5,
         isPublished: true,
         adminNote: 'Associated with Arittek Solutions (Pvt.) Ltd. · Sep 2023 – Feb 2024',
     },
-    // ── sortOrder: 6 ── Finclore ────────────────────────────────────────────
+    // ── Finclore ────────────────────────────────────────────
     {
         slug: 'finclore',
         title: 'Finclore',
@@ -116,11 +111,10 @@ It ensures transparency, compliance, and efficiency through real-time dashboards
         content: `Finclore is a company formation and tax filing service that helps entrepreneurs start and grow their businesses. We offer a comprehensive suite of services, including company formation, tax filing, bookkeeping, and payroll processing in the USA.`,
         techStack: ['Angular', 'Front-End Development', 'Web Design', 'SEO', 'Adobe XD'],
         featured: false,
-        sortOrder: 6,
         isPublished: true,
         adminNote: 'Associated with Arittek Solutions (Pvt.) Ltd. · Dec 2022 – Present',
     },
-    // ── sortOrder: 7 ── KPMC ────────────────────────────────────────────────
+    // ── KPMC ────────────────────────────────────────────────
     {
         slug: 'kpmc',
         title: 'KPMC – Khairpur Municipal Committee',
@@ -130,11 +124,10 @@ It ensures transparency, compliance, and efficiency through real-time dashboards
         content: `The KPMC (Khairpur Municipal Committee) is an online complaint portal that digitalizes the people of Khairpur to file complaints and track their progress online.`,
         techStack: ['Angular', 'Front-End Development', 'Web Design', 'SEO'],
         featured: false,
-        sortOrder: 7,
         isPublished: true,
         adminNote: 'Associated with Arittek Solutions (Pvt.) Ltd. · Nov 2022 – Dec 2022',
     },
-    // ── sortOrder: 8 ── Emlaak Financials ──────────────────────────────────
+    // ── Emlaak Financials ──────────────────────────────────
     {
         slug: 'emlaak-financials',
         title: 'Emlaak Financials',
@@ -144,11 +137,10 @@ It ensures transparency, compliance, and efficiency through real-time dashboards
         content: `Emlaak Financials is a Mutual Fund marketplace that allows digital account opening and online investments in mutual funds with centralized tracking of the entire mutual fund portfolio.`,
         techStack: ['Angular', 'Front-End Development', 'JavaScript', 'CSS', 'HTML', 'Web Design', 'SEO', 'Adobe XD', 'PHP'],
         featured: false,
-        sortOrder: 8,
         isPublished: true,
         adminNote: 'Associated with Arittek Solutions (Pvt.) Ltd. · Nov 2020 – Present',
     },
-    // ── sortOrder: 9 ── Befiler ─────────────────────────────────────────────
+    // ── Befiler ─────────────────────────────────────────────
     {
         slug: 'befiler',
         title: 'Befiler',
@@ -164,11 +156,10 @@ These widgets are specifically designed for seamless integration within banking 
 The initiative aims to simplify the tax return filing process for individuals; especially the salaried class, and promote a culture of documentation. It aims to enhance the number of tax filers in the interest of enhancing the tax base of the country, at the same time, reducing huge cost to ordinary citizens who have to suffer cost of being non-filers.`,
         techStack: ['Angular', 'Front-End Development', 'JavaScript', 'CSS', 'HTML', 'SCSS', 'PHP', 'Web Design', 'SEO'],
         featured: true,
-        sortOrder: 9,
         isPublished: true,
         adminNote: 'Associated with Arittek Solutions (Pvt.) Ltd. · Aug 2020 – Present',
     },
-    // ── sortOrder: 10 ── Asaan Hisab ────────────────────────────────────────
+    // ── Asaan Hisab ────────────────────────────────────────
     {
         slug: 'asaan-hisab',
         title: 'Asaan Hisab',
@@ -180,11 +171,10 @@ The initiative aims to simplify the tax return filing process for individuals; e
 Manage your business. Track your expenses. Create professional invoices. Understand your business better. Take control of your cash flow. 100% Free, no annual charges.`,
         techStack: ['Angular', 'Front-End Development', 'JavaScript', 'Web Design', 'SEO'],
         featured: false,
-        sortOrder: 10,
         isPublished: true,
         adminNote: 'Associated with Arittek Solutions (Pvt.) Ltd. · Jan 2020 – Jun 2020',
     },
-    // ── sortOrder: 11 ── Pizza Delivery Websites ────────────────────────────
+    // ── Pizza Delivery Websites ────────────────────────────
     {
         slug: 'pizza-delivery-websites',
         title: 'Pizza Delivery Websites',
@@ -196,11 +186,10 @@ Manage your business. Track your expenses. Create professional invoices. Underst
 Joker Pizza · Manusalwa · Pinseria · Pizza Turtle · Pizzeria · Pizza Roma · Speed Pizza`,
         techStack: ['Front-End Development', 'Web Design', 'JavaScript', 'CSS', 'HTML'],
         featured: false,
-        sortOrder: 11,
         isPublished: true,
         adminNote: 'Freelance · Remote (Germany)',
     },
-    // ── sortOrder: 12 ── Service Booking Platforms ──────────────────────────
+    // ── Service Booking Platforms ──────────────────────────
     {
         slug: 'service-booking-platforms',
         title: 'Service Booking Platforms',
@@ -212,7 +201,6 @@ Joker Pizza · Manusalwa · Pinseria · Pizza Turtle · Pizzeria · Pizza Roma �
 Hot-n-Cold · SOS 24`,
         techStack: ['Front-End Development', 'Web Design', 'JavaScript', 'CSS', 'HTML'],
         featured: false,
-        sortOrder: 12,
         isPublished: true,
         adminNote: 'Freelance · Remote (UK)',
     },

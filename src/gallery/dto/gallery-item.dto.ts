@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsBoolean, IsEnum, IsInt, Min, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsEnum, IsInt, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
 import { MediaType } from '../gallery-item.entity';
 
@@ -30,13 +30,6 @@ export class CreateGalleryItemDto {
 
     @ApiPropertyOptional()
     @IsOptional()
-    @Type(() => Number)
-    @IsInt()
-    @Min(0)
-    sortOrder?: number;
-
-    @ApiPropertyOptional()
-    @IsOptional()
     @IsBoolean()
     isPublished?: boolean;
 
@@ -63,7 +56,3 @@ export class CreateGalleryItemDto {
 }
 
 export class UpdateGalleryItemDto extends CreateGalleryItemDto { }
-
-export class ReorderGalleryDto {
-    items: { id: string; sortOrder: number }[];
-}

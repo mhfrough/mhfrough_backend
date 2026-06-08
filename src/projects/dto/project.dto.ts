@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsBoolean, IsArray, IsUrl, IsInt, Min } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsArray, IsUrl } from 'class-validator';
 
 export class CreateProjectDto {
     @ApiProperty()
@@ -39,12 +39,6 @@ export class CreateProjectDto {
     @IsOptional()
     @IsBoolean()
     featured?: boolean;
-
-    @ApiPropertyOptional()
-    @IsOptional()
-    @IsInt()
-    @Min(0)
-    sortOrder?: number;
 
     @ApiPropertyOptional()
     @IsOptional()

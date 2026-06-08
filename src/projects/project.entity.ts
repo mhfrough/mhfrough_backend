@@ -32,9 +32,6 @@ export class Project {
     @Column({ default: true })
     featured: boolean;
 
-    @Column({ default: 0 })
-    sortOrder: number;
-
     @Column({ default: true })
     isPublished: boolean;
 

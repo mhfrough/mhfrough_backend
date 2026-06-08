@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { GalleryService } from './gallery.service';
-import { CreateGalleryItemDto, UpdateGalleryItemDto, ReorderGalleryDto } from './dto/gallery-item.dto';
+import { CreateGalleryItemDto, UpdateGalleryItemDto } from './dto/gallery-item.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('Gallery')
@@ -62,14 +62,6 @@ export class GalleryController {
     @ApiBearerAuth()
     update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateGalleryItemDto) {
         return this.service.update(id, dto);
-    }
-
-    @Patch('reorder')
-    @UseGuards(JwtAuthGuard)
-    @ApiBearerAuth()
-    @ApiOperation({ summary: '[Admin] Bulk update sort order' })
-    reorder(@Body() dto: ReorderGalleryDto) {
-        return this.service.reorder(dto.items);
     }
 
     @Delete(':id')

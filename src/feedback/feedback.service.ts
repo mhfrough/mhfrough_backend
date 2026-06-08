@@ -115,8 +115,4 @@ export class FeedbackService {
             description: feedback?.name ?? '—',
         });
     }
-
-    async reorder(items: { id: string; sortOrder: number }[]): Promise<void> {
-        await Promise.all(items.map(({ id, sortOrder }) => this.repo.update(id, { sortOrder })));
-    }
 }

@@ -33,7 +33,6 @@ const items: Partial<GalleryItem>[] = [
         category: 'Photography',
         altText: 'Misty mountain range at dawn',
         mimeType: 'image/jpeg',
-        sortOrder: 1,
         isPublished: true,
     },
     {
@@ -44,7 +43,6 @@ const items: Partial<GalleryItem>[] = [
         category: 'Photography',
         altText: 'Sunset reflection on a calm lake',
         mimeType: 'image/jpeg',
-        sortOrder: 2,
         isPublished: true,
     },
     {
@@ -55,7 +53,6 @@ const items: Partial<GalleryItem>[] = [
         category: 'Photography',
         altText: 'Black and white street photography with shadows',
         mimeType: 'image/jpeg',
-        sortOrder: 3,
         isPublished: true,
     },
     {
@@ -66,7 +63,6 @@ const items: Partial<GalleryItem>[] = [
         category: 'Photography',
         altText: 'Raindrops on a window with bokeh city lights',
         mimeType: 'image/jpeg',
-        sortOrder: 4,
         isPublished: true,
     },
     // ── Architecture ─────────────────────────────────────────────────────────
@@ -78,7 +74,6 @@ const items: Partial<GalleryItem>[] = [
         category: 'Architecture',
         altText: 'Modern concrete building facade',
         mimeType: 'image/jpeg',
-        sortOrder: 5,
         isPublished: true,
     },
     {
@@ -89,7 +84,6 @@ const items: Partial<GalleryItem>[] = [
         category: 'Architecture',
         altText: 'Glass skyscraper shot from below',
         mimeType: 'image/jpeg',
-        sortOrder: 6,
         isPublished: true,
     },
     {
@@ -100,7 +94,6 @@ const items: Partial<GalleryItem>[] = [
         category: 'Architecture',
         altText: 'Bright minimalist interior with sunlight',
         mimeType: 'image/jpeg',
-        sortOrder: 7,
         isPublished: true,
     },
     // ── Nature ────────────────────────────────────────────────────────────────
@@ -112,7 +105,6 @@ const items: Partial<GalleryItem>[] = [
         category: 'Nature',
         altText: 'Ocean waves crashing on rocks',
         mimeType: 'image/jpeg',
-        sortOrder: 8,
         isPublished: true,
     },
     {
@@ -123,7 +115,6 @@ const items: Partial<GalleryItem>[] = [
         category: 'Nature',
         altText: 'Tall trees in a dense forest with sun rays',
         mimeType: 'image/jpeg',
-        sortOrder: 9,
         isPublished: true,
     },
     {
@@ -134,7 +125,6 @@ const items: Partial<GalleryItem>[] = [
         category: 'Nature',
         altText: 'Rolling sand dunes in a desert landscape',
         mimeType: 'image/jpeg',
-        sortOrder: 10,
         isPublished: true,
     },
     // ── Design ────────────────────────────────────────────────────────────────
@@ -146,7 +136,6 @@ const items: Partial<GalleryItem>[] = [
         category: 'Design',
         altText: 'Abstract colour palette swatch composition',
         mimeType: 'image/jpeg',
-        sortOrder: 11,
         isPublished: true,
     },
     {
@@ -157,7 +146,6 @@ const items: Partial<GalleryItem>[] = [
         category: 'Design',
         altText: 'Flatlay of a tech desk with keyboard and notebook',
         mimeType: 'image/jpeg',
-        sortOrder: 12,
         isPublished: true,
     },
     {
@@ -168,7 +156,6 @@ const items: Partial<GalleryItem>[] = [
         category: 'Design',
         altText: 'Laptop screen showing UI design mockup',
         mimeType: 'image/jpeg',
-        sortOrder: 13,
         isPublished: true,
     },
     // ── Travel ────────────────────────────────────────────────────────────────
@@ -180,7 +167,6 @@ const items: Partial<GalleryItem>[] = [
         category: 'Travel',
         altText: 'City skyline illuminated at night',
         mimeType: 'image/jpeg',
-        sortOrder: 14,
         isPublished: true,
     },
     {
@@ -191,7 +177,6 @@ const items: Partial<GalleryItem>[] = [
         category: 'Travel',
         altText: 'Narrow cobblestone lane in an old European city',
         mimeType: 'image/jpeg',
-        sortOrder: 15,
         isPublished: true,
     },
 ];

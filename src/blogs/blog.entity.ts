@@ -35,9 +35,6 @@ export class Blog {
     @Column({ nullable: true, type: 'text' })
     adminNote: string;
 
-    @Column({ default: 0 })
-    sortOrder: number;
-
     @Column({ nullable: true, type: 'timestamp' })
     publishedAt: Date;
 

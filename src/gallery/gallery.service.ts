@@ -18,7 +18,7 @@ export class GalleryService {
 
     findAll(publishedOnly = true): Promise<GalleryItem[]> {
         const where = publishedOnly ? { isPublished: true } : {};
-        return this.repo.find({ where, order: { sortOrder: 'ASC', createdAt: 'DESC' } });
+        return this.repo.find({ where, order: { createdAt: 'DESC' } });
     }
 
     async findPublicPaginated(
@@ -41,8 +41,7 @@ export class GalleryService {
                 { t: tag, ts: `${tag},%`, te: `%,${tag}`, tm: `%,${tag},%` },
             );
         }
-        qb.orderBy('g.sortOrder', 'ASC')
-            .addOrderBy('g.createdAt', 'DESC')
+        qb.orderBy('g.createdAt', 'DESC')
             .skip((page - 1) * limit)
             .take(limit);
         const [data, total] = await qb.getManyAndCount();
@@ -124,18 +123,6 @@ export class GalleryService {
             this.events.emitToAll('gallery:unpublished', { id });
         }
         return updated;
-    }
-
-    async reorder(items: { id: string; sortOrder: number }[]): Promise<void> {
-        await Promise.all(items.map(({ id, sortOrder }) => this.repo.update(id, { sortOrder })));
-        this.activityLog.log({
-            action: 'gallery:reordered',
-            resource: 'gallery',
-            description: `Gallery sort order updated for ${items.length} item(s)`,
-            status: 'success',
-        });
-        this.events.emitToAdmin('gallery:reordered', { items });
-        this.events.emitToAll('gallery:reordered', { items });
     }
 
     async remove(id: string): Promise<void> {

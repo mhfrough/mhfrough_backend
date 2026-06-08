@@ -1,6 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsInt, Min, Max, MaxLength, MinLength, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsString, IsOptional, IsInt, Min, Max, MaxLength, MinLength } from 'class-validator';
 
 export class CreateFeedbackDto {
     @ApiProperty()
@@ -37,22 +36,4 @@ export class UnapproveDto {
     @IsOptional()
     @IsString()
     adminNote?: string;
-}
-
-export class ReorderFeedbackItemDto {
-    @ApiProperty()
-    @IsString()
-    id: string;
-
-    @ApiProperty()
-    @IsInt()
-    @Min(0)
-    sortOrder: number;
-}
-
-export class ReorderFeedbackDto {
-    @ApiProperty({ type: [ReorderFeedbackItemDto] })
-    @ValidateNested({ each: true })
-    @Type(() => ReorderFeedbackItemDto)
-    items: ReorderFeedbackItemDto[];
 }

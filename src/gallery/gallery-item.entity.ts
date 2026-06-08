@@ -29,9 +29,6 @@ export class GalleryItem {
     @Column({ nullable: true })
     category: string;
 
-    @Column({ default: 0 })
-    sortOrder: number;
-
     @Column({ default: true })
     isPublished: boolean;
 

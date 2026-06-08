@@ -23,7 +23,7 @@ export class ProjectsService {
 
     findAll(publishedOnly = true): Promise<Project[]> {
         const where = publishedOnly ? { isPublished: true } : {};
-        return this.repo.find({ where, order: { sortOrder: 'ASC', createdAt: 'DESC' } });
+        return this.repo.find({ where, order: { createdAt: 'DESC' } });
     }
 
     async findPublicPaginated(page: number, limit: number, q?: string, tag?: string) {
@@ -44,8 +44,7 @@ export class ProjectsService {
             );
         }
 
-        qb.orderBy('project.sortOrder', 'ASC')
-            .addOrderBy('project.createdAt', 'DESC')
+        qb.orderBy('project.createdAt', 'DESC')
             .skip((page - 1) * limit)
             .take(limit);
 
@@ -54,7 +53,7 @@ export class ProjectsService {
     }
 
     findFeatured(): Promise<Project[]> {
-        return this.repo.find({ where: { isPublished: true, featured: true }, order: { sortOrder: 'ASC', createdAt: 'DESC' } });
+        return this.repo.find({ where: { isPublished: true, featured: true }, order: { createdAt: 'DESC' } });
     }
 
     async findDistinctTags(): Promise<string[]> {
