@@ -3,9 +3,10 @@ import {
     ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { wsCorsOrigins } from '../common/ws-cors';
 
 @WebSocketGateway({
-    cors: { origin: '*', credentials: true },
+    cors: { origin: wsCorsOrigins(), credentials: true },
     namespace: '/events',
 })
 export class EventsGateway {

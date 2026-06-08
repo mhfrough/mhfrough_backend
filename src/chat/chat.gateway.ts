@@ -8,6 +8,7 @@ import { FcmService } from '../fcm/fcm.service';
 import { PushNotifSource } from '../fcm/push-notification-log.entity';
 import { AiService } from '../ai/ai.service';
 import { AdminSettingsService } from '../admin-settings/admin-settings.service';
+import { wsCorsOrigins } from '../common/ws-cors';
 
 interface JoinPayload { sessionId?: string; visitorName?: string; visitorSessionId?: string; }
 interface MessagePayload { sessionId: string; content: string; }
@@ -25,7 +26,7 @@ interface FileMessagePayload {
 
 @WebSocketGateway({
     cors: {
-        origin: '*',
+        origin: wsCorsOrigins(),
         credentials: true,
     },
     namespace: '/chat',
@@ -150,6 +151,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
             const delay = Math.max(500, settings.aiAutoReplyDelay ?? 1500);
             await new Promise(r => setTimeout(r, delay));
+
+            // Re-check the session after the delay — it may have closed or had
+            // its bot disabled while we were waiting, in which case bail out.
+            const sessionAfterDelay = await this.chatService.getSession(sessionId);
+            if (!sessionAfterDelay?.botEnabled || sessionAfterDelay.status === 'closed') return;
 
             // Get conversation history (all messages except the latest visitor message)
             const messages = await this.chatService.getMessages(sessionId);

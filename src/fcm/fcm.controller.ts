@@ -21,6 +21,7 @@ export class FcmController {
 
     @Delete('unregister')
     @HttpCode(HttpStatus.NO_CONTENT)
+    @Throttle({ default: { limit: 10, ttl: 60000 } })
     @ApiOperation({ summary: 'Unregister a browser FCM token' })
     async unregister(@Body() dto: UnregisterFcmTokenDto): Promise<void> {
         await this.fcm.unregisterToken(dto.token);
