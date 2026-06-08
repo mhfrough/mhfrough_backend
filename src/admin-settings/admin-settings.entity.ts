@@ -81,6 +81,30 @@ export class AdminSettings {
     @Column({ default: 300 })
     aiMaxResponseLength: number;
 
+    // ── Deployment Health ────────────────────────────────────────────────────
+    @Column({ nullable: true, type: 'varchar', length: 200 })
+    githubToken: string | null;
+
+    /** "owner/repo" for the backend repository */
+    @Column({ nullable: true, type: 'varchar', length: 200 })
+    githubRepoBackend: string | null;
+
+    /** "owner/repo" for the frontend repository */
+    @Column({ nullable: true, type: 'varchar', length: 200 })
+    githubRepoFrontend: string | null;
+
+    @Column({ nullable: true, type: 'varchar', length: 200 })
+    renderApiKey: string | null;
+
+    @Column({ nullable: true, type: 'varchar', length: 100 })
+    renderServiceIdBackend: string | null;
+
+    @Column({ nullable: true, type: 'varchar', length: 100 })
+    renderServiceIdFrontend: string | null;
+
+    @Column({ nullable: true, type: 'varchar', length: 100 })
+    renderPostgresId: string | null;
+
     @UpdateDateColumn()
     updatedAt: Date;
 }

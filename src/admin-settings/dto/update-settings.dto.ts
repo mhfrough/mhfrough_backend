@@ -129,4 +129,48 @@ export class UpdateSettingsDto {
     @Min(100)
     @Max(2000)
     aiMaxResponseLength?: number;
+
+    // ── Deployment Health ──────────────────────────────────────────────────────
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(200)
+    githubToken?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(200)
+    githubRepoBackend?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(200)
+    githubRepoFrontend?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(200)
+    renderApiKey?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    renderServiceIdBackend?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    renderServiceIdFrontend?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    renderPostgresId?: string;
 }

@@ -27,6 +27,7 @@ import { SiteSettingsModule } from './site-settings/site-settings.module';
 import { TickerModule } from './ticker/ticker.module';
 import { VisitorsModule } from './visitors/visitors.module';
 import { WidgetsModule } from './widgets/widgets.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { WidgetsModule } from './widgets/widgets.module';
     TickerModule,
     VisitorsModule,
     WidgetsModule,
+    HealthModule,
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',
