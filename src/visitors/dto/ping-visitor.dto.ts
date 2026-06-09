@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsOptional, IsString, IsUUID, IsObject, MaxLength } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class PingVisitorDto {
@@ -30,4 +30,9 @@ export class PingVisitorDto {
     @IsString()
     @MaxLength(500)
     path?: string;
+
+    @ApiPropertyOptional({ description: 'Visitor contact info from mhf_contact_user localStorage' })
+    @IsOptional()
+    @IsObject()
+    contactUser?: Record<string, string>;
 }

@@ -92,6 +92,7 @@ export class VisitorsService {
                     pageViewCount: 0,
                     bounced: true,
                     lastSeenAt: new Date(),
+                    contactUser: dto.contactUser ?? null,
                 }),
             );
             this.events.emitToAdmin('visitor:session_created', session);
@@ -104,12 +105,14 @@ export class VisitorsService {
         const pageViewCount = session.pageViewCount + 1;
         const sessionDurationMs = Date.now() - new Date(session.startedAt).getTime();
 
-        await this.sessions.update(session.id, {
+        const sessionUpdate: Partial<VisitorSession> = {
             pageViewCount,
             bounced: pageViewCount <= 1,
             sessionDurationMs,
             lastSeenAt: new Date(),
-        });
+        };
+        if (dto.contactUser && !session.contactUser) sessionUpdate.contactUser = dto.contactUser;
+        await this.sessions.update(session.id, sessionUpdate);
 
         // Notify admin of which page this visitor is currently on
         this.events.emitToAdmin('visitor:page_view', {

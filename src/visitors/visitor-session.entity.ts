@@ -72,4 +72,8 @@ export class VisitorSession {
 
     @Column({ type: 'timestamptz', nullable: true })
     lastSeenAt: Date | null;
+
+    /** Contact info from visitor's mhf_contact_user localStorage (name, email, etc.) */
+    @Column({ type: 'jsonb', nullable: true })
+    contactUser: Record<string, string> | null;
 }
