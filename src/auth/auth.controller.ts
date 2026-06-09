@@ -27,7 +27,8 @@ export class AuthController {
     @ApiOperation({ summary: 'Logout and clear cookie' })
     logout(@Res({ passthrough: true }) res: Response, @Req() req: Request & { user?: any }) {
         const sessionId = req.user?.sessionId as string | undefined;
-        return this.authService.logout(res, sessionId);
+        const rawToken = req.cookies?.access_token as string | undefined;
+        return this.authService.logout(res, sessionId, rawToken);
     }
 
     @Get('profile')

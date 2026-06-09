@@ -1,9 +1,10 @@
 import {
     Controller, Get, Post, Put, Patch, Delete,
     Param, Body, Query, UseGuards, ParseUUIDPipe,
-    ParseIntPipe, DefaultValuePipe,
+    ParseIntPipe, DefaultValuePipe, UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto, UpdateProjectDto, UnpublishProjectDto, PatchFeaturedDto } from './dto/project.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -14,6 +15,8 @@ export class ProjectsController {
     constructor(private readonly service: ProjectsService) { }
 
     @Get()
+    @UseInterceptors(CacheInterceptor)
+    @CacheTTL(300 * 1000)
     @ApiOperation({ summary: 'Get all published projects (paginated)' })
     @ApiQuery({ name: 'page', required: false, type: Number })
     @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -37,6 +40,8 @@ export class ProjectsController {
     }
 
     @Get('featured')
+    @UseInterceptors(CacheInterceptor)
+    @CacheTTL(300 * 1000)
     @ApiOperation({ summary: 'Get featured published projects' })
     findFeatured() {
         return this.service.findFeatured();

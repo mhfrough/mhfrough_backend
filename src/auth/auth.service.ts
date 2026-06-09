@@ -8,6 +8,7 @@ import { ActivityLogService } from '../activity-log/activity-log.service';
 import { AdminSettingsService } from '../admin-settings/admin-settings.service';
 import { LoginSessionsService } from '../login-sessions/login-sessions.service';
 import { EventsGateway } from '../events/events.gateway';
+import { TokenBlocklistService } from './token-blocklist.service';
 
 @Injectable()
 export class AuthService {
@@ -18,6 +19,7 @@ export class AuthService {
         private readonly adminSettings: AdminSettingsService,
         private readonly loginSessions: LoginSessionsService,
         private readonly gateway: EventsGateway,
+        private readonly blocklist: TokenBlocklistService,
     ) { }
 
     async validateUser(email: string, password: string, ip = 'unknown'): Promise<User> {
@@ -164,7 +166,8 @@ export class AuthService {
         }
 
         const cookieMaxAgeDays = rememberMe ? settings.rememberMeDays : settings.sessionDurationDays;
-        const payload = { sub: user.id, email: user.email, role: user.role, sid: session.id };
+        const jti = crypto.randomUUID();
+        const payload = { sub: user.id, email: user.email, role: user.role, sid: session.id, jti };
         const token = this.jwtService.sign(payload, { expiresIn: `${cookieMaxAgeDays}d` });
 
         const isProd = process.env.NODE_ENV === 'production';
@@ -195,9 +198,22 @@ export class AuthService {
         return { message: 'Login successful' };
     }
 
-    async logout(res: any, sessionId?: string): Promise<{ message: string }> {
+    async logout(res: any, sessionId?: string, rawToken?: string): Promise<{ message: string }> {
         if (sessionId) {
             await this.loginSessions.revoke(sessionId);
+        }
+        if (rawToken) {
+            try {
+                const decoded = this.jwtService.decode(rawToken) as { jti?: string; exp?: number } | null;
+                if (decoded?.jti && decoded?.exp) {
+                    const remainingTtl = decoded.exp - Math.floor(Date.now() / 1000);
+                    if (remainingTtl > 0) {
+                        await this.blocklist.block(decoded.jti, remainingTtl);
+                    }
+                }
+            } catch {
+                // ignore decode errors on logout
+            }
         }
         const isProd = process.env.NODE_ENV === 'production';
         const clearOpts = { secure: isProd, sameSite: isProd ? 'none' : 'lax', path: '/' };

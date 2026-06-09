@@ -1,9 +1,10 @@
 import {
     Controller, Get, Post, Put, Delete,
     Param, Body, UseGuards, ParseUUIDPipe, Patch,
-    Query, ParseIntPipe, DefaultValuePipe,
+    Query, ParseIntPipe, DefaultValuePipe, UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { GalleryService } from './gallery.service';
 import { CreateGalleryItemDto, UpdateGalleryItemDto } from './dto/gallery-item.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -14,6 +15,8 @@ export class GalleryController {
     constructor(private readonly service: GalleryService) { }
 
     @Get()
+    @UseInterceptors(CacheInterceptor)
+    @CacheTTL(300 * 1000)
     @ApiOperation({ summary: 'Get paginated published gallery items' })
     findAll(
         @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,

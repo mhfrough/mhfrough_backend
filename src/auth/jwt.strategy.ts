@@ -5,6 +5,7 @@ import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { LoginSessionsService } from '../login-sessions/login-sessions.service';
+import { TokenBlocklistService } from './token-blocklist.service';
 
 const cookieExtractor = (req: Request): string | null => {
     return req?.cookies?.access_token ?? null;
@@ -16,6 +17,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         private readonly config: ConfigService,
         private readonly usersService: UsersService,
         private readonly loginSessions: LoginSessionsService,
+        private readonly blocklist: TokenBlocklistService,
     ) {
         super({
             jwtFromRequest: ExtractJwt.fromExtractors([
@@ -27,7 +29,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         });
     }
 
-    async validate(payload: { sub: string; email: string; role: string; sid?: string }) {
+    async validate(payload: { sub: string; email: string; role: string; sid?: string; jti?: string }) {
+        if (payload.jti && await this.blocklist.isBlocked(payload.jti)) return null;
         const user = await this.usersService.findById(payload.sub);
         if (!user || !user.isActive) return null;
         if (payload.sid) {

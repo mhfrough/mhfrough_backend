@@ -1,9 +1,10 @@
 import {
     Controller, Get, Post, Put, Patch, Delete,
     Param, Body, Query, UseGuards, ParseUUIDPipe,
-    ParseIntPipe, DefaultValuePipe,
+    ParseIntPipe, DefaultValuePipe, UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { BlogsService } from './blogs.service';
 import { CreateBlogDto, UpdateBlogDto, UnpublishBlogDto } from './dto/blog.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -14,6 +15,8 @@ export class BlogsController {
     constructor(private readonly service: BlogsService) { }
 
     @Get()
+    @UseInterceptors(CacheInterceptor)
+    @CacheTTL(300 * 1000)
     @ApiOperation({ summary: 'Get all published blog posts (paginated)' })
     @ApiQuery({ name: 'page', required: false, type: Number })
     @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -51,6 +54,8 @@ export class BlogsController {
     }
 
     @Get(':slug')
+    @UseInterceptors(CacheInterceptor)
+    @CacheTTL(300 * 1000)
     findBySlug(@Param('slug') slug: string) {
         return this.service.findBySlug(slug);
     }
