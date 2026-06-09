@@ -13,7 +13,7 @@ export class AuthController {
 
     @Post('login')
     @HttpCode(200)
-    @Throttle({ default: { ttl: 60000, limit: 10 } })
+    @Throttle({ default: { ttl: 60000, limit: 5 } })
     @ApiOperation({ summary: 'Admin login' })
     async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response, @Req() req: Request) {
         const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req.ip ?? 'unknown';

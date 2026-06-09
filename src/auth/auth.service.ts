@@ -147,6 +147,22 @@ export class AuthService {
 
         const session = await this.loginSessions.create({ userId: user.id, ip, userAgent });
 
+        // Enforce single active session: notify displaced sessions then revoke them
+        const displaced = await this.loginSessions.findActiveForUser(user.id, session.id);
+        if (displaced.length > 0) {
+            this.gateway.emitToAdmin('session:force_logout', {
+                newSession: {
+                    ip: session.ip,
+                    browser: session.browser,
+                    os: session.os,
+                    country: session.country,
+                    city: session.city,
+                    loginAt: session.loginAt,
+                },
+            });
+            await this.loginSessions.revokeAllExcept(user.id, session.id);
+        }
+
         const cookieMaxAgeDays = rememberMe ? settings.rememberMeDays : settings.sessionDurationDays;
         const payload = { sub: user.id, email: user.email, role: user.role, sid: session.id };
         const token = this.jwtService.sign(payload, { expiresIn: `${cookieMaxAgeDays}d` });

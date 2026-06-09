@@ -61,6 +61,17 @@ export class LoginSessionsService {
         });
     }
 
+    findActiveById(id: string): Promise<LoginSession | null> {
+        return this.repo.findOne({ where: { id, isActive: true } });
+    }
+
+    findActiveForUser(userId: string, excludeId?: string): Promise<LoginSession[]> {
+        const qb = this.repo.createQueryBuilder('s')
+            .where('s.userId = :userId AND s.isActive = true', { userId });
+        if (excludeId) qb.andWhere('s.id != :excludeId', { excludeId });
+        return qb.getMany();
+    }
+
     findAll(): Promise<LoginSession[]> {
         return this.repo.find({ order: { loginAt: 'DESC' } });
     }
