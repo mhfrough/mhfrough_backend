@@ -42,6 +42,14 @@ export class BlogsController {
         return this.service.findDistinctTags();
     }
 
+    @Get('admin/:id')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: '[Admin] Get blog post by ID' })
+    findOneById(@Param('id', ParseUUIDPipe) id: string) {
+        return this.service.findOne(id);
+    }
+
     @Get(':slug')
     findBySlug(@Param('slug') slug: string) {
         return this.service.findBySlug(slug);
