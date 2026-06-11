@@ -173,4 +173,29 @@ export class UpdateSettingsDto {
     @IsString()
     @MaxLength(100)
     renderPostgresId?: string;
+
+    // ── Email (Resend) ────────────────────────────────────────────────────────
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(200)
+    resendApiKey?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(200)
+    emailFromAddress?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    emailFromName?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsBoolean()
+    emailEnabled?: boolean;
 }

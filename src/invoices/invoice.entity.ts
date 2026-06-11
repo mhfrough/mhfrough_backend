@@ -5,8 +5,11 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     OneToMany,
+    ManyToOne,
+    JoinColumn,
 } from 'typeorm';
 import { InvoiceItem } from './invoice-item.entity';
+import { Lead } from '../leads/lead.entity';
 
 export type InvoiceStatus = 'draft' | 'sent' | 'paid';
 
@@ -65,4 +68,11 @@ export class Invoice {
 
     @UpdateDateColumn()
     updatedAt: Date;
+
+    @Column({ type: 'uuid', nullable: true })
+    leadId: string | null;
+
+    @ManyToOne(() => Lead, (lead) => lead.invoices, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'leadId' })
+    lead: Lead | null;
 }

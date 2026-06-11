@@ -10,6 +10,7 @@ export class CreateAppointmentDto {
     @IsOptional() @IsInt() @Min(15) @Max(480) durationMinutes?: number;
     @IsOptional() @IsString() notes?: string;
     @IsOptional() @IsIn(['pending', 'confirmed', 'cancelled', 'completed']) status?: string;
+    @IsOptional() @IsString() leadId?: string;
 }
 
 export class UpdateAppointmentDto {

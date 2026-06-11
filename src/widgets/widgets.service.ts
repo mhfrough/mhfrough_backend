@@ -9,7 +9,7 @@ import { AdminSettingsService } from '../admin-settings/admin-settings.service';
 // called and when cached widget data is considered stale.
 const WEATHER_TTL = 15 * 60 * 1000;         // 15 minutes
 const GOLD_TTL = 8 * 60 * 60 * 1000;        // 8 hours — ~3 calls/day via GoldAPI
-const USD_TTL = 30 * 60 * 1000;             // 30 minutes
+const USD_TTL = 60 * 60 * 1000;             // 1 hour — keeps ExchangeRate-API well under 1500/mo free tier
 
 // ── WeatherAPI condition code → icon key ──────────────────────────────────────
 type WeatherIcon = 'sunny' | 'cloudy' | 'fog' | 'rain' | 'snow' | 'thunderstorm';

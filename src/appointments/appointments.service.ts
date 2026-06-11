@@ -5,6 +5,7 @@ import { Appointment } from './appointment.entity';
 import { CreateAppointmentDto, UpdateAppointmentDto } from './dto/appointment.dto';
 import { ActivityLogService } from '../activity-log/activity-log.service';
 import { EventsGateway } from '../events/events.gateway';
+import { LeadsService } from '../leads/leads.service';
 
 @Injectable()
 export class AppointmentsService {
@@ -13,6 +14,7 @@ export class AppointmentsService {
         private readonly repo: Repository<Appointment>,
         private readonly activityLog: ActivityLogService,
         private readonly gateway: EventsGateway,
+        private readonly leads: LeadsService,
     ) {}
 
     findAll(): Promise<Appointment[]> {
@@ -60,6 +62,9 @@ export class AppointmentsService {
             resourceTitle: saved.title,
             description: `${saved.title} · ${saved.date}`,
         });
+        if (saved.leadId) {
+            await this.leads.advanceStatus(saved.leadId, 'contacted');
+        }
         this.gateway.emitToAdmin('reminder:created', saved);
         return saved;
     }

@@ -74,6 +74,10 @@ export class CreateInvoiceDto {
     @Min(0)
     @Max(100)
     taxRate?: number;
+
+    @IsOptional()
+    @IsString()
+    leadId?: string;
 }
 
 export class UpdateInvoiceDto extends CreateInvoiceDto { }

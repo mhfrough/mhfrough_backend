@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Lead } from '../leads/lead.entity';
 
 export type AppointmentStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
 
@@ -42,4 +43,11 @@ export class Appointment {
 
     @UpdateDateColumn()
     updatedAt: Date;
+
+    @Column({ type: 'uuid', nullable: true })
+    leadId: string | null;
+
+    @ManyToOne(() => Lead, (lead) => lead.appointments, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'leadId' })
+    lead: Lead | null;
 }

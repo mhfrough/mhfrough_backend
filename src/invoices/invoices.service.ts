@@ -5,6 +5,7 @@ import { Invoice } from './invoice.entity';
 import { InvoiceItem } from './invoice-item.entity';
 import { CreateInvoiceDto, UpdateInvoiceDto } from './dto/invoice.dto';
 import { ActivityLogService } from '../activity-log/activity-log.service';
+import { LeadsService } from '../leads/leads.service';
 
 @Injectable()
 export class InvoicesService {
@@ -14,6 +15,7 @@ export class InvoicesService {
         @InjectRepository(InvoiceItem)
         private readonly itemRepo: Repository<InvoiceItem>,
         private readonly activityLog: ActivityLogService,
+        private readonly leads: LeadsService,
     ) { }
 
     findAll(): Promise<Invoice[]> {
@@ -63,6 +65,9 @@ export class InvoicesService {
             resourceTitle: saved.invoiceNumber,
             description: `${saved.invoiceNumber} · ${saved.clientName}`,
         });
+        if (saved.leadId) {
+            await this.leads.advanceStatus(saved.leadId, 'quoted');
+        }
         return saved;
     }
 
@@ -105,6 +110,9 @@ export class InvoicesService {
             resourceTitle: saved.invoiceNumber,
             description: `${saved.invoiceNumber} · $${saved.total}`,
         });
+        if (saved.leadId && saved.status === 'paid') {
+            await this.leads.advanceStatus(saved.leadId, 'won');
+        }
         return saved;
     }
 

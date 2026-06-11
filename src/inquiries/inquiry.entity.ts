@@ -1,7 +1,8 @@
 import {
     Entity, PrimaryGeneratedColumn, Column,
-    CreateDateColumn,
+    CreateDateColumn, ManyToOne, JoinColumn,
 } from 'typeorm';
+import { Lead } from '../leads/lead.entity';
 
 export enum InquiryStatus {
     NEW = 'new',
@@ -20,6 +21,9 @@ export class Inquiry {
     @Column()
     email: string;
 
+    @Column({ type: 'varchar', nullable: true })
+    phone: string | null;
+
     @Column({ nullable: true })
     subject: string;
 
@@ -31,4 +35,11 @@ export class Inquiry {
 
     @CreateDateColumn()
     createdAt: Date;
+
+    @Column({ type: 'uuid', nullable: true })
+    leadId: string | null;
+
+    @ManyToOne(() => Lead, (lead) => lead.inquiries, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'leadId' })
+    lead: Lead | null;
 }

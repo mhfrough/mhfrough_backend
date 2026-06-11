@@ -5,9 +5,10 @@ import { AppointmentsService } from './appointments.service';
 import { AppointmentsController } from './appointments.controller';
 import { ActivityLogModule } from '../activity-log/activity-log.module';
 import { EventsModule } from '../events/events.module';
+import { LeadsModule } from '../leads/leads.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Appointment]), ActivityLogModule, EventsModule],
+    imports: [TypeOrmModule.forFeature([Appointment]), ActivityLogModule, EventsModule, LeadsModule],
     controllers: [AppointmentsController],
     providers: [AppointmentsService],
     exports: [AppointmentsService],

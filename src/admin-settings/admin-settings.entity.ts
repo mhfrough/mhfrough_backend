@@ -105,6 +105,19 @@ export class AdminSettings {
     @Column({ nullable: true, type: 'varchar', length: 100 })
     renderPostgresId: string | null;
 
+    // ── Email (Resend) ───────────────────────────────────────────────────────
+    @Column({ nullable: true, type: 'varchar', length: 200 })
+    resendApiKey: string | null;
+
+    @Column({ nullable: true, type: 'varchar', length: 200 })
+    emailFromAddress: string | null;
+
+    @Column({ default: 'Mohammad Hamza', type: 'varchar', length: 100 })
+    emailFromName: string;
+
+    @Column({ default: false })
+    emailEnabled: boolean;
+
     @UpdateDateColumn()
     updatedAt: Date;
 }

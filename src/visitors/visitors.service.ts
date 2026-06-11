@@ -48,11 +48,16 @@ export class VisitorsService {
         private readonly events: EventsGateway,
     ) { }
 
-    async findOne(sessionId: string): Promise<VisitorSession | null> {
-        return this.sessions.findOne({ where: { id: sessionId } });
+    async findOne(sessionId: string): Promise<(VisitorSession & { visitCount: number }) | null> {
+        const session = await this.sessions.findOne({ where: { id: sessionId } });
+        if (!session) return null;
+        const visitCount = session.clientId
+            ? await this.sessions.count({ where: { clientId: session.clientId } })
+            : 1;
+        return Object.assign(session, { visitCount });
     }
 
-    async ping(dto: PingVisitorDto, rawIp: string, userAgent: string): Promise<{ sessionId: string }> {
+    async ping(dto: PingVisitorDto, rawIp: string, userAgent: string): Promise<{ sessionId: string; returningVisitor: boolean }> {
         const ip = rawIp === '::1' ? '127.0.0.1' : rawIp?.startsWith('::ffff:') ? rawIp.slice(7) : rawIp;
         const fingerprint = createHash('sha256').update(`${ip}|${userAgent}`).digest('hex');
 
@@ -65,7 +70,12 @@ export class VisitorsService {
             }
         }
 
+        let returningVisitor = false;
         if (!session) {
+            if (dto.clientId) {
+                returningVisitor = (await this.sessions.count({ where: { clientId: dto.clientId } })) > 0;
+            }
+
             const ipVersion = ip.includes(':') ? 'IPv6' : 'IPv4';
             const geo = geoip.lookup(ip);
             const ua = detectDevice(userAgent);
@@ -93,6 +103,7 @@ export class VisitorsService {
                     bounced: true,
                     lastSeenAt: new Date(),
                     contactUser: dto.contactUser ?? null,
+                    clientId: dto.clientId ?? null,
                 }),
             );
             this.events.emitToAdmin('visitor:session_created', session);
@@ -112,6 +123,7 @@ export class VisitorsService {
             lastSeenAt: new Date(),
         };
         if (dto.contactUser && !session.contactUser) sessionUpdate.contactUser = dto.contactUser;
+        if (dto.clientId && !session.clientId) sessionUpdate.clientId = dto.clientId;
         await this.sessions.update(session.id, sessionUpdate);
 
         // Notify admin of which page this visitor is currently on
@@ -121,7 +133,7 @@ export class VisitorsService {
             timestamp: new Date().toISOString(),
         });
 
-        return { sessionId: session.id };
+        return { sessionId: session.id, returningVisitor };
     }
 
     async leavePage(dto: LeavePageDto): Promise<void> {
@@ -199,7 +211,7 @@ export class VisitorsService {
         page: number,
         limit: number,
         search?: string,
-    ): Promise<{ data: VisitorSession[]; total: number; page: number; limit: number; totalPages: number }> {
+    ): Promise<{ data: (VisitorSession & { visitCount: number })[]; total: number; page: number; limit: number; totalPages: number }> {
         const qb = this.sessions.createQueryBuilder('s')
             .orderBy('s.startedAt', 'DESC')
             .skip((page - 1) * limit)
@@ -213,7 +225,22 @@ export class VisitorsService {
         }
 
         const [data, total] = await qb.getManyAndCount();
-        return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+
+        const clientIds = [...new Set(data.map(d => d.clientId).filter((id): id is string => !!id))];
+        let visitCounts = new Map<string, number>();
+        if (clientIds.length) {
+            const rows = await this.sessions
+                .createQueryBuilder('s')
+                .select('s.clientId', 'clientId')
+                .addSelect('COUNT(*)', 'count')
+                .where('s.clientId IN (:...clientIds)', { clientIds })
+                .groupBy('s.clientId')
+                .getRawMany();
+            visitCounts = new Map(rows.map(r => [r.clientId, Number(r.count)]));
+        }
+
+        const dataWithVisitCount = data.map(d => Object.assign(d, { visitCount: d.clientId ? (visitCounts.get(d.clientId) ?? 1) : 1 }));
+        return { data: dataWithVisitCount, total, page, limit, totalPages: Math.ceil(total / limit) };
     }
 
     async getStats() {

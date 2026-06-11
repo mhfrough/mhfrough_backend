@@ -25,6 +25,7 @@ const AI_FIELDS = new Set(['aiEnabled', 'aiTone', 'aiInstruction', 'aiAutoReplyD
 const SECURITY_FIELDS = new Set(['enableInactivityLogout', 'inactivityTimeoutMinutes', 'enableLoginAttemptSuspend', 'maxLoginAttempts', 'lockDurationMinutes', 'rememberMeDays', 'sessionDurationDays']);
 const WIDGET_FIELDS = new Set(['weatherApiKey', 'goldApiKey', 'currencyApiKey', 'weatherCity']);
 const BRANDING_FIELDS = new Set(['copyrightOwner', 'footerTagline', 'showFooterTagline']);
+const EMAIL_FIELDS = new Set(['resendApiKey', 'emailFromAddress', 'emailFromName', 'emailEnabled']);
 
 @ApiTags('Admin Settings')
 @Controller('admin/settings')
@@ -51,6 +52,7 @@ export class AdminSettingsController {
             goldApiKey: s.goldApiKey ? '••••••••' : null,
             currencyApiKey: s.currencyApiKey ? '••••••••' : null,
             geminiApiKey: s.geminiApiKey ? '••••••••' : null,
+            resendApiKey: s.resendApiKey ? '••••••••' : null,
         };
     }
 
@@ -123,6 +125,28 @@ export class AdminSettingsController {
                 resource: 'admin_settings',
                 description: `Branding updated: ${brandingChanged.join(', ')}`,
                 status: 'success',
+            });
+        }
+
+        // Resend API key saved or cleared
+        if ('resendApiKey' in dto) {
+            this.activityLog.log({
+                action: 'settings:resend_key_updated',
+                resource: 'admin_settings',
+                description: dto.resendApiKey ? 'Resend API key saved' : 'Resend API key cleared',
+                status: 'success',
+            });
+        }
+
+        // Other email settings (from address/name, enabled toggle) — excluding the key above
+        const otherEmailChanged = changed.filter(k => EMAIL_FIELDS.has(k) && k !== 'resendApiKey');
+        if (otherEmailChanged.length) {
+            this.activityLog.log({
+                action: 'settings:email_config_updated',
+                resource: 'admin_settings',
+                description: `Email config updated: ${otherEmailChanged.join(', ')}`,
+                status: 'success',
+                metadata: Object.fromEntries(otherEmailChanged.map(k => [k, dto[k]])),
             });
         }
 

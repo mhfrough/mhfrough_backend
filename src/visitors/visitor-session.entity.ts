@@ -76,4 +76,9 @@ export class VisitorSession {
     /** Contact info from visitor's mhf_contact_user localStorage (name, email, etc.) */
     @Column({ type: 'jsonb', nullable: true })
     contactUser: Record<string, string> | null;
+
+    /** Durable per-browser ID (localStorage), used to recognize returning visitors across IP/network changes */
+    @Column({ type: 'varchar', nullable: true })
+    @Index()
+    clientId: string | null;
 }

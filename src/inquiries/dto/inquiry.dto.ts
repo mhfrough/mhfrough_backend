@@ -30,3 +30,14 @@ export class CreateInquiryDto {
     @MaxLength(2000)
     message: string;
 }
+
+export class ReplyInquiryDto {
+    @ApiProperty()
+    @IsString()
+    @MaxLength(300)
+    subject: string;
+
+    @ApiProperty()
+    @IsString()
+    html: string;
+}

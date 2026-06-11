@@ -1,8 +1,9 @@
 import {
     Entity, PrimaryGeneratedColumn, Column,
-    CreateDateColumn, UpdateDateColumn, OneToMany,
+    CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne, JoinColumn,
 } from 'typeorm';
 import { ChatMessage } from './chat-message.entity';
+import { Lead } from '../leads/lead.entity';
 
 export type SessionStatus = 'active' | 'closed';
 
@@ -37,4 +38,15 @@ export class ChatSession {
 
     @OneToMany(() => ChatMessage, (m) => m.session, { cascade: true })
     messages: ChatMessage[];
+
+    @Column({ type: 'uuid', nullable: true })
+    leadId: string | null;
+
+    @ManyToOne(() => Lead, (lead) => lead.chatSessions, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'leadId' })
+    lead: Lead | null;
+
+    /** Tracks whether the AI has captured (or given up trying to capture) this visitor's contact info */
+    @Column({ type: 'varchar', default: 'pending' })
+    leadCaptureStatus: 'pending' | 'done';
 }

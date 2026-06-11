@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Param, Body, UseGuards, HttpCode, Patch, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { InquiriesService } from './inquiries.service';
-import { CreateInquiryDto } from './dto/inquiry.dto';
+import { CreateInquiryDto, ReplyInquiryDto } from './dto/inquiry.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Throttle } from '@nestjs/throttler';
 
@@ -32,6 +32,14 @@ export class InquiriesController {
     @ApiOperation({ summary: '[Admin] Mark inquiry as read' })
     markRead(@Param('id') id: string) {
         return this.service.markRead(id);
+    }
+
+    @Post(':id/reply')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: '[Admin] Reply to an inquiry via email' })
+    reply(@Param('id') id: string, @Body() dto: ReplyInquiryDto) {
+        return this.service.reply(id, dto);
     }
 
     @Delete(':id')

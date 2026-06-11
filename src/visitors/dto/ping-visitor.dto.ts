@@ -35,4 +35,10 @@ export class PingVisitorDto {
     @IsOptional()
     @IsObject()
     contactUser?: Record<string, string>;
+
+    @ApiPropertyOptional({ description: 'Durable per-browser ID stored in localStorage, used to recognize returning visitors' })
+    @IsOptional()
+    @IsString()
+    @MaxLength(64)
+    clientId?: string;
 }

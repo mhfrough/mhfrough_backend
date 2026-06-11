@@ -30,6 +30,8 @@ import { VisitorsModule } from './visitors/visitors.module';
 import { WidgetsModule } from './widgets/widgets.module';
 import { HealthModule } from './health/health.module';
 import { AppointmentsModule } from './appointments/appointments.module';
+import { LeadsModule } from './leads/leads.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -76,6 +78,8 @@ import { AppointmentsModule } from './appointments/appointments.module';
     WidgetsModule,
     HealthModule,
     AppointmentsModule,
+    LeadsModule,
+    EmailModule,
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',

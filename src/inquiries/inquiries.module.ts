@@ -6,9 +6,11 @@ import { InquiriesController } from './inquiries.controller';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { FcmModule } from '../fcm/fcm.module';
 import { EventsModule } from '../events/events.module';
+import { LeadsModule } from '../leads/leads.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Inquiry]), NotificationsModule, FcmModule, EventsModule],
+    imports: [TypeOrmModule.forFeature([Inquiry]), NotificationsModule, FcmModule, EventsModule, LeadsModule, EmailModule],
     providers: [InquiriesService],
     controllers: [InquiriesController],
     exports: [InquiriesService],

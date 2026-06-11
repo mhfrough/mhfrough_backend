@@ -8,9 +8,16 @@ import { FcmService } from '../fcm/fcm.service';
 import { PushNotifSource } from '../fcm/push-notification-log.entity';
 import { AiService } from '../ai/ai.service';
 import { AdminSettingsService } from '../admin-settings/admin-settings.service';
+import { LeadsService } from '../leads/leads.service';
 import { wsCorsOrigins } from '../common/ws-cors';
 
-interface JoinPayload { sessionId?: string; visitorName?: string; visitorSessionId?: string; }
+interface JoinPayload {
+    sessionId?: string;
+    visitorName?: string;
+    visitorSessionId?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+}
 interface MessagePayload { sessionId: string; content: string; }
 interface TypingPayload { sessionId: string; isTyping: boolean; }
 interface AdminSelectPayload { sessionId: string; }
@@ -42,11 +49,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     /** socketId -> true if admin */
     private adminSockets = new Set<string>();
 
+    /** Matches the first email address found in a chat message */
+    private static readonly EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]+/;
+    /** Matches a plausible phone number (7+ digits, allowing spaces/dashes/parens) */
+    private static readonly PHONE_RE = /(\+?\d[\d\s().-]{6,}\d)/;
+
     constructor(
         private readonly chatService: ChatService,
         private readonly fcm: FcmService,
         private readonly aiService: AiService,
         private readonly adminSettings: AdminSettingsService,
+        private readonly leadsService: LeadsService,
     ) { }
 
     handleConnection(client: Socket) {
@@ -81,9 +94,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
         // Don't reuse a closed session — always create a fresh one
         if (!session || session.status === 'closed') {
+            let leadId: string | null = null;
+            if (payload.contactEmail) {
+                const lead = await this.leadsService.findOrCreateFromChat({
+                    name: payload.visitorName ?? 'Visitor',
+                    email: payload.contactEmail,
+                    phone: payload.contactPhone,
+                });
+                leadId = lead.id;
+            }
             session = await this.chatService.createSession(
                 payload.visitorName ?? 'Visitor',
                 payload.visitorSessionId,
+                leadId,
             );
         }
 
@@ -120,6 +143,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             source: PushNotifSource.CHAT,
         });
 
+        // If we don't have a lead for this visitor yet, see if they just shared their contact info
+        await this.tryCaptureLeadFromMessage(sessionId, payload.content);
+
         // update sessions list for admins
         const sessions = await this.chatService.getAllSessions();
         this.server.to('admins').emit('sessions:update', sessions);
@@ -128,6 +154,35 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.tryAiAutoReply(sessionId, payload.content);
 
         return msg;
+    }
+
+    /**
+     * Detects an email (and optional phone number) the visitor typed into the
+     * chat, and links/creates a Lead so the conversation isn't lost once the
+     * tab closes.
+     */
+    private async tryCaptureLeadFromMessage(sessionId: string, content: string): Promise<void> {
+        const session = await this.chatService.getSession(sessionId);
+        if (!session || session.leadCaptureStatus !== 'pending' || session.leadId) return;
+
+        const emailMatch = content.match(ChatGateway.EMAIL_RE);
+        if (!emailMatch) return;
+
+        const phoneMatch = content.match(ChatGateway.PHONE_RE);
+
+        const messages = await this.chatService.getMessages(sessionId);
+        const projectSummary = messages
+            .filter(m => m.sender === 'visitor' && m.messageType === 'text')
+            .map(m => m.content)
+            .join('\n');
+
+        const lead = await this.leadsService.findOrCreateFromChat({
+            name: session.visitorName || 'Visitor',
+            email: emailMatch[0],
+            phone: phoneMatch?.[0]?.trim(),
+            projectSummary,
+        });
+        await this.chatService.linkLead(sessionId, lead.id);
     }
 
     @SubscribeMessage('admin:toggle_bot')
@@ -166,10 +221,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                     text: m.content,
                 }));
 
+            // If we still don't have a lead for this visitor, nudge the AI to ask
+            // for an email — but only for the first couple of bot replies, then
+            // give up so it doesn't nag.
+            let instruction = settings.aiInstruction ?? '';
+            if (sessionAfterDelay.leadCaptureStatus === 'pending' && !sessionAfterDelay.leadId) {
+                const botAskCount = messages.filter(m => m.isBot).length;
+                if (botAskCount >= 2) {
+                    await this.chatService.setLeadCaptureStatus(sessionId, 'done');
+                } else {
+                    instruction = `${instruction} If the visitor hasn't shared their email address yet, naturally ask for it (and optionally a phone number) so we can follow up about their project. Ask only once and don't repeat the request if you've already asked.`.trim();
+                }
+            }
+
             const reply = await this.aiService.generateReply({
                 apiKey: settings.geminiApiKey,
                 tone: settings.aiTone ?? 'professional',
-                instruction: settings.aiInstruction ?? '',
+                instruction,
                 history,
                 message: visitorMessage,
                 maxResponseLength: settings.aiMaxResponseLength ?? 300,

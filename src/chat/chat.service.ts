@@ -82,11 +82,12 @@ export class ChatService implements OnModuleInit {
 
     // ─── Sessions ─────────────────────────────────────────────────────────────
 
-    async createSession(visitorName?: string, visitorSessionId?: string): Promise<ChatSession> {
+    async createSession(visitorName?: string, visitorSessionId?: string, leadId?: string | null): Promise<ChatSession> {
         const session = this.sessions.create({
             visitorName: visitorName ?? 'Visitor',
             status: 'active',
             visitorSessionId: visitorSessionId ?? null,
+            ...(leadId ? { leadId, leadCaptureStatus: 'done' as const } : {}),
         });
         return this.sessions.save(session);
     }
@@ -123,6 +124,14 @@ export class ChatService implements OnModuleInit {
 
     async toggleBotEnabled(id: string, enabled: boolean): Promise<void> {
         await this.sessions.update(id, { botEnabled: enabled });
+    }
+
+    async setLeadCaptureStatus(id: string, status: 'pending' | 'done'): Promise<void> {
+        await this.sessions.update(id, { leadCaptureStatus: status });
+    }
+
+    async linkLead(id: string, leadId: string): Promise<void> {
+        await this.sessions.update(id, { leadId, leadCaptureStatus: 'done' });
     }
 
     // ─── Messages ─────────────────────────────────────────────────────────────
