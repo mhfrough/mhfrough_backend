@@ -1,9 +1,10 @@
-import { IsArray, IsString, IsOptional, ArrayNotEmpty } from 'class-validator';
+import { IsArray, IsString, IsOptional, ArrayNotEmpty, Allow } from 'class-validator';
 
 export class UpdateChatSettingDto {
     @IsString()
     key: string;
 
+    @Allow()
     value: unknown;
 }
 

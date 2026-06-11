@@ -18,7 +18,7 @@ const DEFAULT_HOLD_MESSAGES = [
     'Hi! Please hold on, we\'ll be with you in a moment.',
 ];
 
-const DEFAULT_STATUS_MESSAGE = 'Typically replies within a few minutes';
+const DEFAULT_STATUS_MESSAGE = 'Typically replies within minutes';
 
 @Injectable()
 export class ChatService implements OnModuleInit {
