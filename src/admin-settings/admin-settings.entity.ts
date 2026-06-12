@@ -82,7 +82,7 @@ export class AdminSettings {
     aiMaxResponseLength: number;
 
     /** Max number of bot replies before the AI wraps up the lead Q&A and goes quiet */
-    @Column({ default: 6 })
+    @Column({ default: 12 })
     aiMaxQuestions: number;
 
     // ── Deployment Health ────────────────────────────────────────────────────

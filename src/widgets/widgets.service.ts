@@ -17,11 +17,14 @@ type WeatherIcon = 'sunny' | 'cloudy' | 'fog' | 'rain' | 'snow' | 'thunderstorm'
 function getWeatherIcon(code: number): WeatherIcon {
     if ([1000].includes(code)) return 'sunny';
 
-    if ([1030, 1135, 1147].includes(code)) return 'fog';
+    // True fog/whiteout only — "Mist" (1030) is reported constantly in humid
+    // coastal cities like Karachi but reads as haze, not fog, so it falls
+    // through to 'cloudy' below instead of dominating the fog icon.
+    if ([1135, 1147].includes(code)) return 'fog';
 
     if ([1087, 1273, 1276, 1279, 1282].includes(code)) return 'thunderstorm';
 
-    if ([1066, 1114, 1117, 1210, 1213, 1216, 1219, 1222, 1225,
+    if ([1066, 1114, 1117, 1204, 1207, 1210, 1213, 1216, 1219, 1222, 1225,
         1237, 1249, 1252, 1255, 1258, 1261, 1264].includes(code)) return 'snow';
 
     if ([1063, 1069, 1072, 1150, 1153, 1168, 1171,

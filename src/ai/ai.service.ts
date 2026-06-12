@@ -13,8 +13,8 @@ export interface AiReplyOptions {
 export interface AiCollectedInfo {
     email?: string;
     phone?: string;
-    website?: string;
     budget?: string;
+    website?: string;
 }
 
 export interface AiAppointmentRequest {
@@ -55,8 +55,8 @@ const STRUCTURED_RESPONSE_SCHEMA = {
             properties: {
                 email: { type: Type.STRING },
                 phone: { type: Type.STRING },
-                website: { type: Type.STRING },
                 budget: { type: Type.STRING },
+                website: { type: Type.STRING },
             },
         },
         appointment: {

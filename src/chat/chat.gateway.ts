@@ -235,17 +235,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 ? await this.leadsService.findOne(sessionAfterDelay.leadId).catch(() => null)
                 : null;
 
-            const FIELD_LABELS: Record<'email' | 'phone' | 'website' | 'budget', string> = {
+            // Order here is the priority in which the AI should ask for missing
+            // info — contact details first, then the project itself, with the
+            // visitor's existing website/business URL last (least essential).
+            const FIELD_LABELS: Record<'email' | 'phone' | 'budget' | 'website', string> = {
                 email: 'email address',
                 phone: 'phone number',
-                website: 'website / business URL',
-                budget: 'project budget',
+                budget: 'project budget and basic requirements',
+                website: 'current website / business URL (if relevant)',
             };
             const missingFields = (Object.keys(FIELD_LABELS) as (keyof typeof FIELD_LABELS)[])
                 .filter(f => !lead?.[f]);
 
             const questionsAsked = messages.filter(m => m.isBot && m.messageType === 'text').length;
-            const maxQuestions = settings.aiMaxQuestions ?? 6;
+            const maxQuestions = settings.aiMaxQuestions ?? 12;
             const remaining = maxQuestions - questionsAsked;
 
             const now = new Date();
@@ -254,22 +257,24 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
             const taskParts: string[] = [];
             if (missingFields.length > 0 && remaining > 1) {
-                const labels = missingFields.map(f => FIELD_LABELS[f]).join(', ');
+                const labels = missingFields.map(f => FIELD_LABELS[f]).join(', then their ');
                 taskParts.push(
-                    `You are also qualifying this visitor as a lead. You still need to find out their: ${labels}. ` +
-                    `Ask about ONE of these per reply, woven naturally into the conversation — don't list them all at once. ` +
+                    `You are also qualifying this visitor as a lead. In this priority order, you still need to find out the visitor's ${labels}. ` +
+                    `Ask about ONE of these per reply, woven naturally into the conversation — don't list them all at once, and don't skip ahead in the order unless the visitor already volunteered a later item. ` +
+                    `Try to gather what you need efficiently: as soon as you have their contact info plus a basic idea of their needs/budget, that's usually enough to move forward — don't keep asking questions just to use up your reply budget. ` +
                     `You have about ${remaining} more replies before this conversation must wrap up. ` +
-                    `Once you've asked about everything missing (or you're nearly out of replies) and the visitor has confirmed their details, ` +
-                    `set readyToClose=true and write a brief, friendly closing reply that does not ask any further questions.`,
+                    `Once you've asked about everything missing (or you have enough to move forward, or you're nearly out of replies) and the visitor has confirmed their details, set readyToClose=true.`,
                 );
             } else {
                 taskParts.push(
-                    `You have already gathered everything needed from this visitor, or you've reached the question limit. ` +
-                    `Set readyToClose=true and write a brief, friendly closing reply that does not ask any further questions.`,
+                    `You have already gathered everything needed from this visitor, or you've reached the question limit. Set readyToClose=true.`,
                 );
             }
             taskParts.push(
-                `Always populate "collected" with any of email, phone, website, or budget the visitor has shared so far in this message — only include fields they actually provided.`,
+                `When readyToClose is true, write a brief reply that responds naturally to what the visitor just said — do not say goodbye or wrap up the conversation, since a separate closing message will be sent automatically right after yours.`,
+            );
+            taskParts.push(
+                `Always populate "collected" with any of email, phone, budget, or website the visitor has shared so far in this message — only include fields they actually provided.`,
             );
             taskParts.push(
                 `Today is ${weekday}, ${todayStr}. If the visitor asks to schedule a call, meeting, or appointment for a specific date/time, ` +
