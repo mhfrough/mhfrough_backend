@@ -8,11 +8,13 @@ import { ChatSession } from '../chat/chat-session.entity';
 import { LeadsService } from './leads.service';
 import { LeadsController } from './leads.controller';
 import { ActivityLogModule } from '../activity-log/activity-log.module';
+import { EventsModule } from '../events/events.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Lead, Inquiry, Appointment, Invoice, ChatSession]),
         ActivityLogModule,
+        EventsModule,
     ],
     providers: [LeadsService],
     controllers: [LeadsController],

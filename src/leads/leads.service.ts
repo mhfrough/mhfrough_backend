@@ -5,6 +5,7 @@ import { Lead } from './lead.entity';
 import { ChatSession } from '../chat/chat-session.entity';
 import { CreateLeadDto, UpdateLeadDto } from './dto/lead.dto';
 import { ActivityLogService } from '../activity-log/activity-log.service';
+import { EventsGateway } from '../events/events.gateway';
 
 const LEAD_RELATIONS = ['inquiries', 'appointments', 'invoices', 'chatSessions'];
 
@@ -14,6 +15,7 @@ export class LeadsService {
         @InjectRepository(Lead) private readonly repo: Repository<Lead>,
         @InjectRepository(ChatSession) private readonly chatSessionRepo: Repository<ChatSession>,
         private readonly activityLog: ActivityLogService,
+        private readonly events: EventsGateway,
     ) { }
 
     findAll(): Promise<Lead[]> {
@@ -46,6 +48,7 @@ export class LeadsService {
             resourceTitle: saved.name,
             description: `${saved.name} <${saved.email}> · source: ${saved.source}`,
         });
+        this.events.emitToAdmin('lead:created', saved);
         return saved;
     }
 
@@ -60,6 +63,7 @@ export class LeadsService {
             resourceTitle: saved.name,
             description: `${saved.name} · ${saved.status}`,
         });
+        this.events.emitToAdmin('lead:updated', saved);
         return saved;
     }
 
@@ -73,6 +77,7 @@ export class LeadsService {
             resourceTitle: lead.name,
             description: lead.name,
         });
+        this.events.emitToAdmin('lead:deleted', { id });
     }
 
     /**
@@ -100,6 +105,7 @@ export class LeadsService {
             resourceTitle: saved.name,
             description: `${saved.name} <${saved.email}> · source: email`,
         });
+        this.events.emitToAdmin('lead:created', saved);
         return saved;
     }
 
@@ -114,7 +120,10 @@ export class LeadsService {
             let changed = false;
             if (!existing.phone && data.phone) { existing.phone = data.phone; changed = true; }
             if (!existing.projectSummary && data.projectSummary) { existing.projectSummary = data.projectSummary.slice(0, 500); changed = true; }
-            if (changed) await this.repo.save(existing);
+            if (changed) {
+                await this.repo.save(existing);
+                this.events.emitToAdmin('lead:updated', existing);
+            }
             return existing;
         }
 
@@ -134,6 +143,7 @@ export class LeadsService {
             resourceTitle: saved.name,
             description: `${saved.name} <${saved.email}> · source: chat`,
         });
+        this.events.emitToAdmin('lead:created', saved);
         return saved;
     }
 
@@ -150,7 +160,10 @@ export class LeadsService {
         if (!lead.website && data.website) { lead.website = data.website; changed = true; }
         if (!lead.budget && data.budget) { lead.budget = data.budget; changed = true; }
 
-        return changed ? this.repo.save(lead) : lead;
+        if (!changed) return lead;
+        const saved = await this.repo.save(lead);
+        this.events.emitToAdmin('lead:updated', saved);
+        return saved;
     }
 
     /**
@@ -164,5 +177,6 @@ export class LeadsService {
         if (ORDER[lead.status] >= ORDER[status]) return;
         lead.status = status;
         await this.repo.save(lead);
+        this.events.emitToAdmin('lead:updated', lead);
     }
 }
