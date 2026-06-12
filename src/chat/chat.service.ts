@@ -18,6 +18,13 @@ const DEFAULT_HOLD_MESSAGES = [
     'Hi! Please hold on, we\'ll be with you in a moment.',
 ];
 
+const DEFAULT_FINAL_MESSAGES = [
+    'Thanks — that\'s everything we need! We\'ll review your details and get back to you shortly. 🚀',
+    'Awesome, got it all! Our team will take a look and follow up soon. Talk soon! 👋',
+    'Perfect, you\'re all set. We\'ll be in touch with next steps before you know it. ✨',
+    'Got everything — thank you! Sit tight, we\'ll reach out very soon. 🙌',
+];
+
 const DEFAULT_STATUS_MESSAGE = 'Typically replies within minutes';
 
 @Injectable()
@@ -44,6 +51,7 @@ export class ChatService implements OnModuleInit {
         const defaults: Record<string, string> = {
             greeting_messages: JSON.stringify(DEFAULT_GREETINGS),
             hold_messages: JSON.stringify(DEFAULT_HOLD_MESSAGES),
+            final_messages: JSON.stringify(DEFAULT_FINAL_MESSAGES),
             status_message: DEFAULT_STATUS_MESSAGE,
         };
         for (const [key, value] of Object.entries(defaults)) {
@@ -140,7 +148,7 @@ export class ChatService implements OnModuleInit {
         sessionId: string,
         content: string,
         sender: 'visitor' | 'admin',
-        messageType: 'text' | 'audio' | 'file' = 'text',
+        messageType: 'text' | 'audio' | 'file' | 'reminder' = 'text',
         audioUrl?: string,
         isBot = false,
         fileMeta?: { fileUrl: string; fileName: string; fileType: string; fileSize: number },

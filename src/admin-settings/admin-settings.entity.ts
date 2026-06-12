@@ -81,6 +81,10 @@ export class AdminSettings {
     @Column({ default: 300 })
     aiMaxResponseLength: number;
 
+    /** Max number of bot replies before the AI wraps up the lead Q&A and goes quiet */
+    @Column({ default: 6 })
+    aiMaxQuestions: number;
+
     // ── Deployment Health ────────────────────────────────────────────────────
     @Column({ nullable: true, type: 'varchar', length: 200 })
     githubToken: string | null;

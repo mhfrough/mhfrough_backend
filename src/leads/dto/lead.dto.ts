@@ -22,6 +22,12 @@ export class CreateLeadDto {
     @MaxLength(20)
     phone?: string;
 
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(200)
+    website?: string;
+
     @ApiPropertyOptional({ enum: LEAD_SOURCES })
     @IsOptional()
     @IsIn(LEAD_SOURCES)
@@ -74,6 +80,12 @@ export class UpdateLeadDto {
     @IsString()
     @MaxLength(20)
     phone?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(200)
+    website?: string;
 
     @ApiPropertyOptional({ enum: LEAD_SOURCES })
     @IsOptional()

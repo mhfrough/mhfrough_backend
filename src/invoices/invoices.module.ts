@@ -10,5 +10,6 @@ import { LeadsModule } from '../leads/leads.module';
     imports: [TypeOrmModule.forFeature([Invoice, InvoiceItem]), LeadsModule],
     controllers: [InvoicesController],
     providers: [InvoicesService],
+    exports: [InvoicesService],
 })
 export class InvoicesModule { }

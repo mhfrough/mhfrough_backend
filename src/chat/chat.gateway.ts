@@ -9,6 +9,8 @@ import { PushNotifSource } from '../fcm/push-notification-log.entity';
 import { AiService } from '../ai/ai.service';
 import { AdminSettingsService } from '../admin-settings/admin-settings.service';
 import { LeadsService } from '../leads/leads.service';
+import { AppointmentsService } from '../appointments/appointments.service';
+import { InvoicesService } from '../invoices/invoices.service';
 import { wsCorsOrigins } from '../common/ws-cors';
 
 interface JoinPayload {
@@ -53,6 +55,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private static readonly EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]+/;
     /** Matches a plausible phone number (7+ digits, allowing spaces/dashes/parens) */
     private static readonly PHONE_RE = /(\+?\d[\d\s().-]{6,}\d)/;
+    /** Matches an AI-suggested appointment date (YYYY-MM-DD) */
+    private static readonly DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+    /** Matches an AI-suggested appointment start time (24-hour HH:MM) */
+    private static readonly TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
     constructor(
         private readonly chatService: ChatService,
@@ -60,6 +66,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         private readonly aiService: AiService,
         private readonly adminSettings: AdminSettingsService,
         private readonly leadsService: LeadsService,
+        private readonly appointmentsService: AppointmentsService,
+        private readonly invoicesService: InvoicesService,
     ) { }
 
     handleConnection(client: Socket) {
@@ -221,32 +229,161 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                     text: m.content,
                 }));
 
-            // If we still don't have a lead for this visitor, nudge the AI to ask
-            // for an email — but only for the first couple of bot replies, then
-            // give up so it doesn't nag.
-            let instruction = settings.aiInstruction ?? '';
-            if (sessionAfterDelay.leadCaptureStatus === 'pending' && !sessionAfterDelay.leadId) {
-                const botAskCount = messages.filter(m => m.isBot).length;
-                if (botAskCount >= 2) {
-                    await this.chatService.setLeadCaptureStatus(sessionId, 'done');
-                } else {
-                    instruction = `${instruction} If the visitor hasn't shared their email address yet, naturally ask for it (and optionally a phone number) so we can follow up about their project. Ask only once and don't repeat the request if you've already asked.`.trim();
-                }
-            }
+            // Resolve the lead linked to this session (if any) so we know what's
+            // already known and can merge newly-collected info onto it.
+            let lead = sessionAfterDelay.leadId
+                ? await this.leadsService.findOne(sessionAfterDelay.leadId).catch(() => null)
+                : null;
 
-            const reply = await this.aiService.generateReply({
+            const FIELD_LABELS: Record<'email' | 'phone' | 'website' | 'budget', string> = {
+                email: 'email address',
+                phone: 'phone number',
+                website: 'website / business URL',
+                budget: 'project budget',
+            };
+            const missingFields = (Object.keys(FIELD_LABELS) as (keyof typeof FIELD_LABELS)[])
+                .filter(f => !lead?.[f]);
+
+            const questionsAsked = messages.filter(m => m.isBot && m.messageType === 'text').length;
+            const maxQuestions = settings.aiMaxQuestions ?? 6;
+            const remaining = maxQuestions - questionsAsked;
+
+            const now = new Date();
+            const todayStr = now.toISOString().slice(0, 10);
+            const weekday = now.toLocaleDateString('en-US', { weekday: 'long' });
+
+            const taskParts: string[] = [];
+            if (missingFields.length > 0 && remaining > 1) {
+                const labels = missingFields.map(f => FIELD_LABELS[f]).join(', ');
+                taskParts.push(
+                    `You are also qualifying this visitor as a lead. You still need to find out their: ${labels}. ` +
+                    `Ask about ONE of these per reply, woven naturally into the conversation — don't list them all at once. ` +
+                    `You have about ${remaining} more replies before this conversation must wrap up. ` +
+                    `Once you've asked about everything missing (or you're nearly out of replies) and the visitor has confirmed their details, ` +
+                    `set readyToClose=true and write a brief, friendly closing reply that does not ask any further questions.`,
+                );
+            } else {
+                taskParts.push(
+                    `You have already gathered everything needed from this visitor, or you've reached the question limit. ` +
+                    `Set readyToClose=true and write a brief, friendly closing reply that does not ask any further questions.`,
+                );
+            }
+            taskParts.push(
+                `Always populate "collected" with any of email, phone, website, or budget the visitor has shared so far in this message — only include fields they actually provided.`,
+            );
+            taskParts.push(
+                `Today is ${weekday}, ${todayStr}. If the visitor asks to schedule a call, meeting, or appointment for a specific date/time, ` +
+                `fill the "appointment" field with a short title, the date (YYYY-MM-DD), startTime (24-hour HH:MM), and durationMinutes (default 30). ` +
+                `Otherwise leave "appointment" null.`,
+            );
+            taskParts.push(
+                `When readyToClose is true, also suggest 1-3 "invoiceItems" (itemName, quantity, unitPrice) for a draft project invoice based on what was discussed and any budget mentioned. Otherwise leave "invoiceItems" empty.`,
+            );
+
+            const aiResult = await this.aiService.generateStructuredReply({
                 apiKey: settings.geminiApiKey,
                 tone: settings.aiTone ?? 'professional',
-                instruction,
+                instruction: settings.aiInstruction ?? '',
                 history,
                 message: visitorMessage,
                 maxResponseLength: settings.aiMaxResponseLength ?? 300,
+                task: taskParts.join(' '),
             });
 
-            if (!reply) return;
+            if (!aiResult?.reply) return;
 
-            const aiMsg = await this.chatService.saveMessage(sessionId, reply, 'admin', 'text', undefined, true);
+            const aiMsg = await this.chatService.saveMessage(sessionId, aiResult.reply, 'admin', 'text', undefined, true);
             this.server.to(`session:${sessionId}`).emit('message:new', aiMsg);
+
+            // Merge newly-collected lead info
+            const collected = aiResult.collected ?? {};
+            const collectedEmail = collected.email?.trim();
+            if (!lead && collectedEmail && ChatGateway.EMAIL_RE.test(collectedEmail)) {
+                lead = await this.leadsService.findOrCreateFromChat({
+                    name: sessionAfterDelay.visitorName || 'Visitor',
+                    email: collectedEmail,
+                    phone: collected.phone?.trim(),
+                });
+                await this.chatService.linkLead(sessionId, lead.id);
+            }
+            if (lead) {
+                lead = await this.leadsService.mergeCapturedInfo(lead.id, {
+                    phone: collected.phone?.trim(),
+                    website: collected.website?.trim(),
+                    budget: collected.budget?.trim(),
+                });
+            }
+
+            // Appointment / reminder card
+            const appt = aiResult.appointment;
+            if (appt?.title?.trim() && appt.date && ChatGateway.DATE_RE.test(appt.date) && appt.startTime && ChatGateway.TIME_RE.test(appt.startTime)) {
+                const durationMinutes = Math.min(480, Math.max(15, Math.round(appt.durationMinutes ?? 30)));
+                const saved = await this.appointmentsService.create({
+                    title: appt.title.trim(),
+                    clientName: sessionAfterDelay.visitorName || undefined,
+                    clientEmail: lead?.email,
+                    clientPhone: lead?.phone ?? undefined,
+                    date: appt.date,
+                    startTime: appt.startTime,
+                    durationMinutes,
+                    notes: appt.notes,
+                    status: 'pending',
+                    leadId: lead?.id,
+                });
+                const reminderMsg = await this.chatService.saveMessage(
+                    sessionId,
+                    JSON.stringify({
+                        appointmentId: saved.id,
+                        title: saved.title,
+                        date: saved.date,
+                        startTime: saved.startTime,
+                        durationMinutes: saved.durationMinutes,
+                    }),
+                    'admin',
+                    'reminder',
+                    undefined,
+                    true,
+                );
+                this.server.to(`session:${sessionId}`).emit('message:new', reminderMsg);
+            }
+
+            // Wrap-up: stop the bot, draft an invoice, and post a closer message
+            const finalize = aiResult.readyToClose || remaining <= 1;
+            if (finalize) {
+                await this.chatService.setLeadCaptureStatus(sessionId, 'done');
+                await this.chatService.toggleBotEnabled(sessionId, false);
+
+                if (lead?.email) {
+                    const dueDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+                    const items = (aiResult.invoiceItems ?? [])
+                        .filter(it => it.itemName?.trim())
+                        .slice(0, 5)
+                        .map(it => ({
+                            itemName: it.itemName.trim(),
+                            quantity: it.quantity && it.quantity > 0 ? it.quantity : 1,
+                            unitPrice: it.unitPrice && it.unitPrice >= 0 ? it.unitPrice : 0,
+                        }));
+                    await this.invoicesService.create({
+                        clientName: sessionAfterDelay.visitorName || lead.name,
+                        clientEmail: lead.email,
+                        clientAddress: lead.website ?? '',
+                        clientPhone: lead.phone ?? undefined,
+                        issueDate: todayStr,
+                        dueDate,
+                        items: items.length ? items : [{ itemName: 'Project Discussion / Consultation', quantity: 1, unitPrice: 0 }],
+                        status: 'draft',
+                        leadId: lead.id,
+                    });
+                }
+
+                const chatSettings = await this.chatService.getSettings();
+                const finalMessages = Array.isArray(chatSettings.final_messages) ? chatSettings.final_messages as string[] : [];
+                const finalMessage = finalMessages.length
+                    ? finalMessages[Math.floor(Math.random() * finalMessages.length)]
+                    : "Thanks — that's everything we need! We'll review your details and get back to you shortly.";
+                const finalMsg = await this.chatService.saveMessage(sessionId, finalMessage, 'admin', 'text', undefined, true);
+                this.server.to(`session:${sessionId}`).emit('message:new', finalMsg);
+            }
 
             const updatedSessions = await this.chatService.getAllSessions();
             this.server.to('admins').emit('sessions:update', updatedSessions);

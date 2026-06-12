@@ -138,6 +138,22 @@ export class LeadsService {
     }
 
     /**
+     * Fills in any currently-empty contact/qualification fields on a lead
+     * (phone, website, budget) without overwriting data the lead already has.
+     */
+    async mergeCapturedInfo(id: string, data: { phone?: string; website?: string; budget?: string }): Promise<Lead> {
+        const lead = await this.repo.findOne({ where: { id } });
+        if (!lead) throw new NotFoundException('Lead not found');
+
+        let changed = false;
+        if (!lead.phone && data.phone) { lead.phone = data.phone; changed = true; }
+        if (!lead.website && data.website) { lead.website = data.website; changed = true; }
+        if (!lead.budget && data.budget) { lead.budget = data.budget; changed = true; }
+
+        return changed ? this.repo.save(lead) : lead;
+    }
+
+    /**
      * Bumps a lead's status forward in the pipeline, never downgrading a
      * resolved (`won`/`lost`) lead and never moving status backwards.
      */

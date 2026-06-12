@@ -25,7 +25,7 @@ export class ChatMessage {
     sender: MessageSender;
 
     @Column({ type: 'varchar', default: 'text' })
-    messageType: 'text' | 'audio' | 'file';
+    messageType: 'text' | 'audio' | 'file' | 'reminder';
 
     @Column({ type: 'varchar', nullable: true, default: null })
     audioUrl: string | null;

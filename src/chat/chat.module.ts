@@ -11,6 +11,8 @@ import { AiModule } from '../ai/ai.module';
 import { AdminSettingsModule } from '../admin-settings/admin-settings.module';
 import { SupabaseStorageModule } from '../supabase-storage/supabase-storage.module';
 import { LeadsModule } from '../leads/leads.module';
+import { AppointmentsModule } from '../appointments/appointments.module';
+import { InvoicesModule } from '../invoices/invoices.module';
 
 @Module({
     imports: [
@@ -20,6 +22,8 @@ import { LeadsModule } from '../leads/leads.module';
         AdminSettingsModule,
         SupabaseStorageModule,
         LeadsModule,
+        AppointmentsModule,
+        InvoicesModule,
     ],
     providers: [ChatService, ChatGateway],
     controllers: [ChatController],
