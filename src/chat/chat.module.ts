@@ -13,6 +13,7 @@ import { SupabaseStorageModule } from '../supabase-storage/supabase-storage.modu
 import { LeadsModule } from '../leads/leads.module';
 import { AppointmentsModule } from '../appointments/appointments.module';
 import { InvoicesModule } from '../invoices/invoices.module';
+import { WidgetsModule } from '../widgets/widgets.module';
 
 @Module({
     imports: [
@@ -24,6 +25,7 @@ import { InvoicesModule } from '../invoices/invoices.module';
         LeadsModule,
         AppointmentsModule,
         InvoicesModule,
+        WidgetsModule,
     ],
     providers: [ChatService, ChatGateway],
     controllers: [ChatController],

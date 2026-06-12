@@ -12,5 +12,6 @@ import { AdminSettingsModule } from '../admin-settings/admin-settings.module';
     ],
     controllers: [WidgetsController],
     providers: [WidgetsService],
+    exports: [WidgetsService],
 })
 export class WidgetsModule { }

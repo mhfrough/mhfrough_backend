@@ -180,6 +180,17 @@ export class WidgetsService {
         }
     }
 
+    /**
+     * Reads the cached USD→PKR rate without triggering an external API call —
+     * used by other modules (e.g. chat AI) that just need a rough conversion
+     * and shouldn't pay the latency/cost of a live lookup.
+     */
+    async getUsdPkrRate(): Promise<number | null> {
+        const cached = await this.getCache('usd_pkr');
+        const rate = cached?.data?.['rate'] as number | undefined;
+        return typeof rate === 'number' ? rate : null;
+    }
+
     // ── Admin: widget key config status (masked) ──────────────────────────────
 
     async getWidgetConfig(): Promise<Record<string, unknown>> {

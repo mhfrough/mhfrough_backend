@@ -11,6 +11,7 @@ import { AdminSettingsService } from '../admin-settings/admin-settings.service';
 import { LeadsService } from '../leads/leads.service';
 import { AppointmentsService } from '../appointments/appointments.service';
 import { InvoicesService } from '../invoices/invoices.service';
+import { WidgetsService } from '../widgets/widgets.service';
 import { wsCorsOrigins } from '../common/ws-cors';
 
 interface JoinPayload {
@@ -59,6 +60,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private static readonly DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
     /** Matches an AI-suggested appointment start time (24-hour HH:MM) */
     private static readonly TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+    /** Matches a PKR-denominated budget (Rs, PKR, rupees, ₨) */
+    private static readonly PKR_RE = /\b(?:pkr|rs\.?|rupees?|₨)\b/i;
+    /** Extracts a numeric amount with an optional k/lac/lakh/crore/million suffix */
+    private static readonly AMOUNT_RE = /([\d,]+(?:\.\d+)?)\s*(k|thousand|lac|lakh|crore|m|million)?/i;
 
     constructor(
         private readonly chatService: ChatService,
@@ -68,7 +73,33 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         private readonly leadsService: LeadsService,
         private readonly appointmentsService: AppointmentsService,
         private readonly invoicesService: InvoicesService,
+        private readonly widgetsService: WidgetsService,
     ) { }
+
+    /**
+     * If `raw` is a PKR-denominated budget and a cached USD/PKR rate is
+     * available, appends a rough USD equivalent — e.g. "PKR 2,500,000" ->
+     * "PKR 2,500,000 (~$8,929 USD)". Returns `raw` unchanged otherwise.
+     */
+    private normalizeBudgetToUsd(raw: string, usdPkrRate: number | null): string {
+        if (!usdPkrRate || !ChatGateway.PKR_RE.test(raw)) return raw;
+
+        const match = raw.match(ChatGateway.AMOUNT_RE);
+        if (!match) return raw;
+
+        let amount = parseFloat(match[1].replace(/,/g, ''));
+        if (isNaN(amount)) return raw;
+
+        switch (match[2]?.toLowerCase()) {
+            case 'k': case 'thousand': amount *= 1_000; break;
+            case 'lac': case 'lakh': amount *= 100_000; break;
+            case 'crore': amount *= 10_000_000; break;
+            case 'm': case 'million': amount *= 1_000_000; break;
+        }
+
+        const usd = Math.round(amount / usdPkrRate);
+        return `${raw} (~$${usd.toLocaleString('en-US')} USD)`;
+    }
 
     handleConnection(client: Socket) {
         // connection established; role determined on first event
@@ -277,7 +308,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 `Always populate "collected" with any of email, phone, budget, or website the visitor has shared so far in this message — only include fields they actually provided.`,
             );
             taskParts.push(
-                `Today is ${weekday}, ${todayStr}. If the visitor asks to schedule a call, meeting, or appointment for a specific date/time, ` +
+                `If you ask about budget (or the visitor brings it up), also ask them to specify whether the amount is in USD or PKR.`,
+            );
+            taskParts.push(
+                `Today is ${weekday}, ${todayStr}. Once you have the visitor's contact details and a basic idea of their project, proactively offer to set up a quick call or chat to discuss further, and ask if they have a day/time that works for them. ` +
+                `If the visitor agrees to or requests a specific date/time for a call, meeting, or appointment, ` +
                 `fill the "appointment" field with a short title, the date (YYYY-MM-DD), startTime (24-hour HH:MM), and durationMinutes (default 30). ` +
                 `Otherwise leave "appointment" null.`,
             );
@@ -312,10 +347,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 await this.chatService.linkLead(sessionId, lead.id);
             }
             if (lead) {
+                const collectedBudget = collected.budget?.trim();
+                const budget = collectedBudget
+                    ? this.normalizeBudgetToUsd(collectedBudget, await this.widgetsService.getUsdPkrRate())
+                    : undefined;
                 lead = await this.leadsService.mergeCapturedInfo(lead.id, {
                     phone: collected.phone?.trim(),
                     website: collected.website?.trim(),
-                    budget: collected.budget?.trim(),
+                    budget,
                 });
             }
 
@@ -386,6 +425,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 const finalMessage = finalMessages.length
                     ? finalMessages[Math.floor(Math.random() * finalMessages.length)]
                     : "Thanks — that's everything we need! We'll review your details and get back to you shortly.";
+
+                // Brief pause so the closing message doesn't land instantly after the reply above
+                await new Promise(r => setTimeout(r, 2000));
+
                 const finalMsg = await this.chatService.saveMessage(sessionId, finalMessage, 'admin', 'text', undefined, true);
                 this.server.to(`session:${sessionId}`).emit('message:new', finalMsg);
             }
