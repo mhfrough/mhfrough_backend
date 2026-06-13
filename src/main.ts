@@ -34,14 +34,19 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api/v1');
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('mhfrough.dev API')
-    .setDescription('Personal Portfolio API — Mohammad Hamza')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .addCookieAuth('access_token')
-    .build();
-  SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, swaggerConfig));
+  // Expose Swagger only outside production — it documents the full API surface
+  // and shouldn't be publicly browsable on the live site.
+  const swaggerEnabled = process.env.NODE_ENV !== 'production';
+  if (swaggerEnabled) {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('mhfrough.dev API')
+      .setDescription('Personal Portfolio API — Mohammad Hamza')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addCookieAuth('access_token')
+      .build();
+    SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, swaggerConfig));
+  }
 
   const port = process.env.PORT ?? 3023;
   await app.listen(port);
@@ -50,6 +55,8 @@ async function bootstrap() {
   await seedAdminUser();
 
   console.log(`🚀 Backend running on http://localhost:${port}/api/v1`);
-  console.log(`📚 Swagger docs  → http://localhost:${port}/api/docs`);
+  if (swaggerEnabled) {
+    console.log(`📚 Swagger docs  → http://localhost:${port}/api/docs`);
+  }
 }
 bootstrap();

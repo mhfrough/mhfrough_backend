@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Delete, Patch, Param, Body, Query, UseGuards, HttpCode, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { FeedbackService } from './feedback.service';
-import { CreateFeedbackDto, UnapproveDto } from './dto/feedback.dto';
+import { CreateFeedbackDto, UnapproveDto, FeatureDto } from './dto/feedback.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Throttle } from '@nestjs/throttler';
 
@@ -31,12 +31,26 @@ export class FeedbackController {
         return this.service.create(dto);
     }
 
+    @Get('featured')
+    @ApiOperation({ summary: 'Get featured testimonials (falls back to latest approved)' })
+    findFeatured() {
+        return this.service.findFeatured();
+    }
+
     @Get('all')
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
     @ApiOperation({ summary: '[Admin] Get all feedback' })
     findAll() {
         return this.service.findAll();
+    }
+
+    @Patch(':id/feature')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: '[Admin] Feature/unfeature a review as a testimonial' })
+    setFeatured(@Param('id') id: string, @Body() dto: FeatureDto) {
+        return this.service.setFeatured(id, dto.featured);
     }
 
     @Patch(':id/approve')

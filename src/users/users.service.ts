@@ -61,6 +61,13 @@ export class UsersService {
         await this.repo.update(userId, { passwordHash: hash });
     }
 
+    /** Re-verify a user's password — used to gate destructive admin actions. */
+    async verifyPassword(userId: string, password: string): Promise<boolean> {
+        const user = await this.repo.findOne({ where: { id: userId } });
+        if (!user) return false;
+        return bcrypt.compare(password, user.passwordHash);
+    }
+
     async updateProfile(userId: string, data: Partial<Pick<User,
         'displayName' | 'bio' | 'aboutHtml' | 'avatarUrl' | 'contactEmail' | 'phone' | 'location' |
         'timezone' | 'website' | 'github' | 'linkedin' | 'twitter' |

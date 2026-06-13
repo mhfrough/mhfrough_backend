@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsInt, Min, Max, MaxLength, MinLength } from 'class-validator';
+import { IsString, IsOptional, IsInt, IsBoolean, Min, Max, MaxLength, MinLength } from 'class-validator';
 
 export class CreateFeedbackDto {
     @ApiProperty()
@@ -36,4 +36,10 @@ export class UnapproveDto {
     @IsOptional()
     @IsString()
     adminNote?: string;
+}
+
+export class FeatureDto {
+    @ApiProperty()
+    @IsBoolean()
+    featured: boolean;
 }

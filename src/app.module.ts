@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -18,6 +18,7 @@ import { EventsModule } from './events/events.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { ActivityLogModule } from './activity-log/activity-log.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { HttpThrottlerGuard } from './common/guards/http-throttler.guard';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { UploadModule } from './upload/upload.module';
@@ -32,6 +33,8 @@ import { HealthModule } from './health/health.module';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { LeadsModule } from './leads/leads.module';
 import { EmailModule } from './email/email.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { AdminDataModule } from './admin-data/admin-data.module';
 
 @Module({
   imports: [
@@ -54,7 +57,7 @@ import { EmailModule } from './email/email.module';
         logging: config.get('NODE_ENV') === 'development',
       }),
     }),
-    ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     AuthModule,
     UsersModule,
     ProjectsModule,
@@ -80,6 +83,8 @@ import { EmailModule } from './email/email.module';
     AppointmentsModule,
     LeadsModule,
     EmailModule,
+    AnalyticsModule,
+    AdminDataModule,
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',
@@ -88,6 +93,10 @@ import { EmailModule } from './email/email.module';
   ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
+    // Activates the per-endpoint @Throttle() limits (login, unlock, visitor pings)
+    // and applies the 100/min default everywhere else. HTTP-only so it doesn't
+    // break the WebSocket gateways.
+    { provide: APP_GUARD, useClass: HttpThrottlerGuard },
   ],
 })
 export class AppModule { }

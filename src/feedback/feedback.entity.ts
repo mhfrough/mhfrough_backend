@@ -29,6 +29,9 @@ export class Feedback {
     @Column({ default: true })
     showOnSite: boolean;
 
+    @Column({ default: false })
+    isFeatured: boolean;
+
     @Column({ nullable: true, type: 'text' })
     adminNote: string;
 

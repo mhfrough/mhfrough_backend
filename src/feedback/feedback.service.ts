@@ -43,8 +43,42 @@ export class FeedbackService {
         return { data, total, page, limit, totalPages: Math.max(1, Math.ceil(total / limit)) };
     }
 
+    /**
+     * Curated testimonials for the public site: admin-featured approved reviews,
+     * falling back to the latest approved reviews so the section is never empty.
+     */
+    async findFeatured(limit = 6): Promise<Feedback[]> {
+        const featured = await this.repo.find({
+            where: { isApproved: true, showOnSite: true, isFeatured: true },
+            order: { createdAt: 'DESC' },
+            take: limit,
+        });
+        if (featured.length) return featured;
+        return this.repo.find({
+            where: { isApproved: true, showOnSite: true },
+            order: { createdAt: 'DESC' },
+            take: limit,
+        });
+    }
+
     findAll(): Promise<Feedback[]> {
         return this.repo.find({ order: { createdAt: 'DESC' } });
+    }
+
+    async setFeatured(id: string, featured: boolean): Promise<Feedback | null> {
+        await this.repo.update(id, { isFeatured: featured });
+        const feedback = await this.repo.findOne({ where: { id } });
+        if (feedback) {
+            this.events.emitToAll('feedback:featured', feedback);
+            this.activityLog.log({
+                action: featured ? 'feedback:feature' : 'feedback:unfeature',
+                resource: 'feedback',
+                resourceId: id,
+                resourceTitle: feedback.name,
+                description: `${feedback.name}${featured ? ' · featured as testimonial' : ' · unfeatured'}`,
+            });
+        }
+        return feedback;
     }
 
     async create(dto: CreateFeedbackDto): Promise<Feedback> {

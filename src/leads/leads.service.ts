@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Lead } from './lead.entity';
+import { Lead, LeadStatus } from './lead.entity';
 import { ChatSession } from '../chat/chat-session.entity';
 import { CreateLeadDto, UpdateLeadDto } from './dto/lead.dto';
 import { ActivityLogService } from '../activity-log/activity-log.service';
@@ -18,8 +18,58 @@ export class LeadsService {
         private readonly events: EventsGateway,
     ) { }
 
+    /**
+     * Canonicalises an email (trim + lowercase) so lead dedup-by-email is
+     * case/whitespace insensitive — otherwise "John@X.com" and "john@x.com"
+     * would fragment the same person's pipeline into separate leads.
+     */
+    private static normalizeEmail(email: string): string {
+        return email.trim().toLowerCase();
+    }
+
     findAll(): Promise<Lead[]> {
         return this.repo.find({ order: { createdAt: 'DESC' } });
+    }
+
+    /**
+     * Pipeline summary for the admin dashboard: total leads, counts per status,
+     * how many are still open (not won/lost), win rate among resolved leads,
+     * and a breakdown by acquisition source.
+     */
+    async getStats(): Promise<{
+        total: number;
+        open: number;
+        winRate: number;
+        byStatus: Record<LeadStatus, number>;
+        bySource: { source: string; count: number }[];
+    }> {
+        const [statusRows, sourceRows] = await Promise.all([
+            this.repo.createQueryBuilder('l')
+                .select('l.status', 'status').addSelect('COUNT(*)', 'count')
+                .groupBy('l.status').getRawMany<{ status: LeadStatus; count: string }>(),
+            this.repo.createQueryBuilder('l')
+                .select('l.source', 'source').addSelect('COUNT(*)', 'count')
+                .groupBy('l.source').getRawMany<{ source: string; count: string }>(),
+        ]);
+
+        const byStatus: Record<LeadStatus, number> = {
+            new: 0, contacted: 0, qualified: 0, quoted: 0, won: 0, lost: 0,
+        };
+        let total = 0;
+        for (const r of statusRows) {
+            const count = Number(r.count);
+            if (r.status in byStatus) byStatus[r.status] = count;
+            total += count;
+        }
+
+        const resolved = byStatus.won + byStatus.lost;
+        const winRate = resolved > 0 ? Math.round((byStatus.won / resolved) * 100) : 0;
+        const open = total - byStatus.won - byStatus.lost;
+        const bySource = sourceRows
+            .map(r => ({ source: r.source, count: Number(r.count) }))
+            .sort((a, b) => b.count - a.count);
+
+        return { total, open, winRate, byStatus, bySource };
     }
 
     async findOne(id: string): Promise<Lead> {
@@ -32,6 +82,7 @@ export class LeadsService {
         const { chatSessionId, ...rest } = dto;
         const lead = this.repo.create({
             ...rest,
+            email: LeadsService.normalizeEmail(rest.email),
             source: dto.source ?? 'manual',
             status: dto.status ?? 'new',
         });
@@ -55,6 +106,7 @@ export class LeadsService {
     async update(id: string, dto: UpdateLeadDto): Promise<Lead> {
         const lead = await this.findOne(id);
         Object.assign(lead, dto);
+        if (dto.email) lead.email = LeadsService.normalizeEmail(dto.email);
         const saved = await this.repo.save(lead);
         this.activityLog.log({
             action: 'lead:update',
@@ -86,12 +138,13 @@ export class LeadsService {
      * the inquiry's contact details.
      */
     async findOrCreateFromInquiry(data: { name: string; email: string; phone?: string; message: string }): Promise<Lead> {
-        const existing = await this.repo.findOne({ where: { email: data.email } });
+        const email = LeadsService.normalizeEmail(data.email);
+        const existing = await this.repo.findOne({ where: { email } });
         if (existing) return existing;
 
         const lead = this.repo.create({
             name: data.name,
-            email: data.email,
+            email,
             phone: data.phone ?? null,
             source: 'email',
             status: 'new',
@@ -115,7 +168,8 @@ export class LeadsService {
      * contact details captured during a chat conversation.
      */
     async findOrCreateFromChat(data: { name: string; email: string; phone?: string; projectSummary?: string }): Promise<Lead> {
-        const existing = await this.repo.findOne({ where: { email: data.email } });
+        const email = LeadsService.normalizeEmail(data.email);
+        const existing = await this.repo.findOne({ where: { email } });
         if (existing) {
             let changed = false;
             if (!existing.phone && data.phone) { existing.phone = data.phone; changed = true; }
@@ -129,7 +183,7 @@ export class LeadsService {
 
         const lead = this.repo.create({
             name: data.name,
-            email: data.email,
+            email,
             phone: data.phone ?? null,
             source: 'chat',
             status: 'new',

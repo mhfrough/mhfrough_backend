@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ChatService } from './chat.service';
 import { ChatGateway } from './chat.gateway';
@@ -33,6 +34,7 @@ export class ChatController {
      * File type restricted to audio/* only; max 10 MB.
      */
     @Post('audio')
+    @Throttle({ default: { limit: 10, ttl: 60000 } })
     @UseInterceptors(
         FileInterceptor('file', {
             storage: memoryStorage(),

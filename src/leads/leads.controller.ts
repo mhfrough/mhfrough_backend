@@ -17,6 +17,12 @@ export class LeadsController {
         return this.service.findAll();
     }
 
+    @Get('stats')
+    @ApiOperation({ summary: '[Admin] Pipeline summary (counts, win rate, sources)' })
+    stats() {
+        return this.service.getStats();
+    }
+
     @Get(':id')
     @ApiOperation({ summary: '[Admin] Get a lead with linked records' })
     findOne(@Param('id') id: string) {

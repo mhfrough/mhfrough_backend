@@ -64,6 +64,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private static readonly PKR_RE = /\b(?:pkr|rs\.?|rupees?|₨)\b/i;
     /** Extracts a numeric amount with an optional k/lac/lakh/crore/million suffix */
     private static readonly AMOUNT_RE = /([\d,]+(?:\.\d+)?)\s*(k|thousand|lac|lakh|crore|m|million)?/i;
+    /** Hard cap on a single chat message — guards against unbounded payloads */
+    private static readonly MAX_CONTENT = 4000;
+
+    /**
+     * Trims an inbound message, rejects non-strings/empties, and caps length so
+     * a malicious or buggy client can't push unbounded content into the DB.
+     * Returns null when the message should be ignored.
+     */
+    private sanitizeContent(raw: unknown): string | null {
+        if (typeof raw !== 'string') return null;
+        const trimmed = raw.trim();
+        if (!trimmed) return null;
+        return trimmed.slice(0, ChatGateway.MAX_CONTENT);
+    }
 
     constructor(
         private readonly chatService: ChatService,
@@ -169,7 +183,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         const sessionId = this.visitorSockets.get(client.id) ?? payload.sessionId;
         if (!sessionId) return;
 
-        const msg = await this.chatService.saveMessage(sessionId, payload.content, 'visitor');
+        const content = this.sanitizeContent(payload.content);
+        if (!content) return;
+
+        const msg = await this.chatService.saveMessage(sessionId, content, 'visitor');
 
         // broadcast to admins
         this.server.to('admins').emit('message:new', msg);
@@ -177,20 +194,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         // push notification for new visitor message
         this.fcm.sendPush({
             title: '💬 New Chat Message',
-            body: `Visitor: "${payload.content.slice(0, 80)}"`,
+            body: `Visitor: "${content.slice(0, 80)}"`,
             url: '/admin/dashboard',
             source: PushNotifSource.CHAT,
         });
 
         // If we don't have a lead for this visitor yet, see if they just shared their contact info
-        await this.tryCaptureLeadFromMessage(sessionId, payload.content);
+        await this.tryCaptureLeadFromMessage(sessionId, content);
 
         // update sessions list for admins
         const sessions = await this.chatService.getAllSessions();
         this.server.to('admins').emit('sessions:update', sessions);
 
         // Fire-and-forget AI auto-reply
-        this.tryAiAutoReply(sessionId, payload.content);
+        this.tryAiAutoReply(sessionId, content);
 
         return msg;
     }
@@ -511,7 +528,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     ) {
         if (!this.adminSockets.has(client.id)) return;
 
-        const msg = await this.chatService.saveMessage(payload.sessionId, payload.content, 'admin');
+        const content = this.sanitizeContent(payload.content);
+        if (!content) return;
+
+        const msg = await this.chatService.saveMessage(payload.sessionId, content, 'admin');
 
         // deliver to visitor and other admins watching — exclude the sending admin socket
         client.to(`session:${payload.sessionId}`).emit('message:new', msg);
