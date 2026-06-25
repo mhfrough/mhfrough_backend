@@ -1,5 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsBoolean, IsArray, IsUrl } from 'class-validator';
+import { Transform } from 'class-transformer';
+
+/** Treat empty/blank strings as "not provided" so @IsOptional skips them. */
+const emptyToUndefined = ({ value }: { value: unknown }) =>
+    typeof value === 'string' && value.trim() === '' ? undefined : value;
 
 export class CreateProjectDto {
     @ApiProperty()
@@ -26,11 +31,13 @@ export class CreateProjectDto {
     tags?: string[];
 
     @ApiPropertyOptional()
+    @Transform(emptyToUndefined)
     @IsOptional()
     @IsUrl()
     liveUrl?: string;
 
     @ApiPropertyOptional()
+    @Transform(emptyToUndefined)
     @IsOptional()
     @IsUrl()
     githubUrl?: string;

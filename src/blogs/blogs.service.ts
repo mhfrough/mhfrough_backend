@@ -5,6 +5,9 @@ import { Blog } from './blog.entity';
 import { CreateBlogDto, UpdateBlogDto } from './dto/blog.dto';
 import { ActivityLogService } from '../activity-log/activity-log.service';
 import { SupabaseStorageService } from '../supabase-storage/supabase-storage.service';
+import { EventsGateway } from '../events/events.gateway';
+import { FcmService } from '../fcm/fcm.service';
+import { PushNotifSource } from '../fcm/push-notification-log.entity';
 
 @Injectable()
 export class BlogsService {
@@ -12,7 +15,19 @@ export class BlogsService {
         @InjectRepository(Blog) private readonly repo: Repository<Blog>,
         private readonly activityLog: ActivityLogService,
         private readonly storage: SupabaseStorageService,
+        private readonly events: EventsGateway,
+        private readonly fcm: FcmService,
     ) { }
+
+    /** Push notification announcing a freshly published post. */
+    private notifyPublished(blog: Blog): void {
+        this.fcm.sendPush({
+            title: '📝 New Blog Post',
+            body: `"${blog.title}" is now live`,
+            url: `/blog/${blog.slug}`,
+            source: PushNotifSource.INQUIRY,
+        });
+    }
 
     findAll(publishedOnly = true): Promise<Blog[]> {
         const where = publishedOnly ? { isPublished: true } : {};
@@ -76,13 +91,17 @@ export class BlogsService {
         const blog = this.repo.create(dto);
         if (dto.isPublished && !blog.publishedAt) blog.publishedAt = new Date();
         const saved = this.repo.save(blog);
-        saved.then(b => this.activityLog.log({
-            action: 'blog:create',
-            resource: 'blog',
-            resourceId: b.id,
-            resourceTitle: b.title,
-            description: b.title,
-        }));
+        saved.then(b => {
+            this.events.emitToAll('blog:created', b);
+            if (b.isPublished) this.notifyPublished(b);
+            this.activityLog.log({
+                action: 'blog:create',
+                resource: 'blog',
+                resourceId: b.id,
+                resourceTitle: b.title,
+                description: b.title,
+            });
+        });
         return saved;
     }
 
@@ -103,9 +122,11 @@ export class BlogsService {
         if (dto.isPublished && !blog.publishedAt) blog.publishedAt = new Date();
         Object.assign(blog, dto);
         const saved = await this.repo.save(blog);
-        const action = dto.isPublished && !wasPublished ? 'blog:publish' : 'blog:update';
-        const desc = saved.title;
-        this.activityLog.log({ action, resource: 'blog', resourceId: saved.id, resourceTitle: saved.title, description: desc });
+        const justPublished = !!dto.isPublished && !wasPublished;
+        this.events.emitToAll('blog:updated', saved);
+        if (justPublished) this.notifyPublished(saved);
+        const action = justPublished ? 'blog:publish' : 'blog:update';
+        this.activityLog.log({ action, resource: 'blog', resourceId: saved.id, resourceTitle: saved.title, description: saved.title });
         return saved;
     }
 
@@ -114,6 +135,7 @@ export class BlogsService {
         blog.isPublished = false;
         if (adminNote !== undefined) blog.adminNote = adminNote;
         const saved = await this.repo.save(blog);
+        this.events.emitToAll('blog:unpublished', { id: saved.id });
         this.activityLog.log({
             action: 'blog:unpublish',
             resource: 'blog',
@@ -127,15 +149,18 @@ export class BlogsService {
     async remove(id: string): Promise<void> {
         const blog = await this.findOne(id);
         const title = blog.title;
+        const hadCover = !!blog.coverImage;
         if (blog.coverImage) {
             await this.storage.deleteByUrl(blog.coverImage);
         }
+        await this.repo.remove(blog);
+        this.events.emitToAll('blog:deleted', { id });
         this.activityLog.log({
             action: 'blog:delete',
             resource: 'blog',
             resourceId: id,
             resourceTitle: title,
-            description: `Blog deleted: "${title}"${blog.coverImage ? ' — cover image removed from storage' : ''}`,
+            description: `Blog deleted: "${title}"${hadCover ? ' — cover image removed from storage' : ''}`,
         });
     }
 }
