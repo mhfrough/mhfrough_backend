@@ -51,10 +51,21 @@ import { AdminDataModule } from './admin-data/admin-data.module';
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
         autoLoadEntities: true,
-        synchronize: config.get('NODE_ENV') !== 'production',
-        migrationsRun: config.get('NODE_ENV') === 'production',
+        // Dev and prod now share one managed Supabase database, so migrations
+        // are the single source of truth for the schema. `synchronize` stays off
+        // (opt in per-env with DB_SYNCHRONIZE=true against a throwaway DB only)
+        // and pending migrations run automatically on boot.
+        synchronize: config.get('DB_SYNCHRONIZE') === 'true',
+        migrationsRun: config.get('DB_MIGRATIONS_RUN') !== 'false',
         migrations: [__dirname + '/migrations/*.js'],
         logging: config.get('NODE_ENV') === 'development',
+        // Supabase (and most managed Postgres) require SSL. Set DB_SSL=true in
+        // the environment; the self-signed pooler cert means rejectUnauthorized
+        // must be off.
+        ssl:
+          config.get('DB_SSL') === 'true'
+            ? { rejectUnauthorized: false }
+            : false,
       }),
     }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),

@@ -20,6 +20,7 @@ const AppDataSource = new DataSource({
     database: process.env.DB_NAME || 'mhfrough_db',
     entities: [User],
     synchronize: true,
+    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
 });
 
 export async function seedAdminUser() {
