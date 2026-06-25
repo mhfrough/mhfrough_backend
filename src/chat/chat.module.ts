@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ChatSession } from './chat-session.entity';
 import { ChatMessage } from './chat-message.entity';
 import { ChatSetting } from './chat-setting.entity';
@@ -18,6 +20,13 @@ import { WidgetsModule } from '../widgets/widgets.module';
 @Module({
     imports: [
         TypeOrmModule.forFeature([ChatSession, ChatMessage, ChatSetting]),
+        JwtModule.registerAsync({
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: (config: ConfigService) => ({
+                secret: config.get<string>('JWT_SECRET'),
+            }),
+        }),
         FcmModule,
         AiModule,
         AdminSettingsModule,

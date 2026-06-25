@@ -3,6 +3,8 @@ import {
     OnGatewayConnection, OnGatewayDisconnect, ConnectedSocket, MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { JwtService } from '@nestjs/jwt';
+import { verifyAdminSocket } from '../common/ws-admin-auth';
 import { ChatService } from './chat.service';
 import { FcmService } from '../fcm/fcm.service';
 import { PushNotifSource } from '../fcm/push-notification-log.entity';
@@ -88,6 +90,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         private readonly appointmentsService: AppointmentsService,
         private readonly invoicesService: InvoicesService,
         private readonly widgetsService: WidgetsService,
+        private readonly jwt: JwtService,
     ) { }
 
     /**
@@ -494,6 +497,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     @SubscribeMessage('admin:join')
     async onAdminJoin(@ConnectedSocket() client: Socket) {
+        // Authenticate the socket before granting any admin privileges. Without
+        // this, any anonymous client could emit `admin:join` and then read every
+        // visitor's chat history/PII and post messages as the admin.
+        const admin = await verifyAdminSocket(client, this.jwt);
+        if (!admin) {
+            client.emit('admin:unauthorized');
+            return [];
+        }
         this.adminSockets.add(client.id);
         client.join('admins');
         const sessions = await this.chatService.getAllSessions();
@@ -505,6 +516,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         @ConnectedSocket() client: Socket,
         @MessageBody() payload: AdminSelectPayload,
     ) {
+        if (!this.adminSockets.has(client.id)) return [];
         client.join(`session:${payload.sessionId}`);
         if (!this.adminSessions.has(payload.sessionId)) {
             this.adminSessions.set(payload.sessionId, new Set());

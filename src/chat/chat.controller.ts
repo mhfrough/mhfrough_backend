@@ -53,7 +53,7 @@ export class ChatController {
     ): Promise<{ url: string }> {
         if (!file) throw new BadRequestException('No audio file provided.');
         const folder = sessionId ? `chat/sessions/${sessionId}` : 'chat/sessions/unknown';
-        const url = await this.supabaseStorage.uploadBuffer(file.buffer, file.originalname, file.mimetype, folder);
+        const { url } = await this.supabaseStorage.uploadBuffer(file.buffer, file.originalname, file.mimetype, folder);
         return { url };
     }
 
@@ -91,8 +91,8 @@ export class ChatController {
         const folder = sessionId ? `chat/sessions/${sessionId}` : 'chat/sessions/admin';
         const results = await Promise.all(
             files.map(async (f) => {
-                const url = await this.supabaseStorage.uploadBuffer(f.buffer, f.originalname, f.mimetype, folder);
-                return { url, name: f.originalname, type: f.mimetype, size: f.size };
+                const { url, contentType, size } = await this.supabaseStorage.uploadBuffer(f.buffer, f.originalname, f.mimetype, folder);
+                return { url, name: f.originalname, type: contentType, size };
             }),
         );
         return results;

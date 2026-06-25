@@ -3,8 +3,32 @@ import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 import { extname } from 'path';
+import sharp from 'sharp';
 
 const BUCKET = 'uploads';
+
+/**
+ * Raster image types we re-encode to WebP on upload. Animated GIFs and videos
+ * are intentionally excluded — GIF animation would be lost and video is left
+ * to the browser. SVG is never uploaded (blocked at the controller as an XSS
+ * vector).
+ */
+const OPTIMIZABLE_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp'];
+// Cap the longest stored edge. 1600px covers full-bleed hero/cover images on
+// retina displays while shedding the multi-thousand-px originals phones produce.
+const MAX_IMAGE_DIMENSION = 1600;
+const WEBP_QUALITY = 80;
+// Filenames are content-addressed (randomUUID), so a stored object never
+// changes — cache it in browsers/CDN for a year. This is the main lever for
+// the Supabase "Cached Egress" overage: repeat views serve from cache, not
+// from Supabase.
+const ONE_YEAR_SECONDS = '31536000';
+
+export interface UploadResult {
+    url: string;
+    contentType: string;
+    size: number;
+}
 
 @Injectable()
 export class SupabaseStorageService implements OnModuleInit {
@@ -42,15 +66,27 @@ export class SupabaseStorageService implements OnModuleInit {
         originalname: string,
         mimetype: string,
         folder: string,
-    ): Promise<string> {
+    ): Promise<UploadResult> {
         if (!this.client) throw new InternalServerErrorException('Supabase Storage is not configured.');
 
-        const ext = extname(originalname).toLowerCase() || this.mimeToExt(mimetype);
+        let outBuffer = buffer;
+        let contentType = mimetype;
+        let ext = extname(originalname).toLowerCase() || this.mimeToExt(mimetype);
+
+        if (OPTIMIZABLE_IMAGE_MIME.includes(mimetype)) {
+            const optimized = await this.optimizeImage(buffer);
+            if (optimized) {
+                outBuffer = optimized;
+                contentType = 'image/webp';
+                ext = '.webp';
+            }
+        }
+
         const path = `${folder}/${randomUUID()}${ext}`;
 
         const { error } = await this.client.storage
             .from(BUCKET)
-            .upload(path, buffer, { contentType: mimetype, upsert: false });
+            .upload(path, outBuffer, { contentType, upsert: false, cacheControl: ONE_YEAR_SECONDS });
 
         if (error) {
             this.logger.error(`Supabase upload failed: ${error.message}`);
@@ -58,7 +94,32 @@ export class SupabaseStorageService implements OnModuleInit {
         }
 
         const { data } = this.client.storage.from(BUCKET).getPublicUrl(path);
-        return data.publicUrl;
+        return { url: data.publicUrl, contentType, size: outBuffer.length };
+    }
+
+    /**
+     * Resize (downscale only) and re-encode a raster image to WebP to cut both
+     * storage and egress. Returns null on failure so the caller falls back to
+     * storing the original untouched — a bad encode should never block an upload.
+     */
+    private async optimizeImage(buffer: Buffer): Promise<Buffer | null> {
+        try {
+            const optimized = await sharp(buffer, { failOn: 'none' })
+                .rotate() // bake in EXIF orientation before stripping metadata
+                .resize({
+                    width: MAX_IMAGE_DIMENSION,
+                    height: MAX_IMAGE_DIMENSION,
+                    fit: 'inside',
+                    withoutEnlargement: true,
+                })
+                .webp({ quality: WEBP_QUALITY })
+                .toBuffer();
+            // Guard against the rare case where WebP is larger than the source.
+            return optimized.length < buffer.length ? optimized : null;
+        } catch (err) {
+            this.logger.warn(`Image optimization failed, storing original: ${(err as Error).message}`);
+            return null;
+        }
     }
 
     /** Delete a file using its full public URL (no-op if URL is not from this bucket). */

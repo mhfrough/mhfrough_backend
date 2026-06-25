@@ -3,7 +3,9 @@ import {
     ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { JwtService } from '@nestjs/jwt';
 import { wsCorsOrigins } from '../common/ws-cors';
+import { verifyAdminSocket } from '../common/ws-admin-auth';
 
 @WebSocketGateway({
     cors: { origin: wsCorsOrigins(), credentials: true },
@@ -13,9 +15,19 @@ export class EventsGateway {
     @WebSocketServer()
     server: Server;
 
+    constructor(private readonly jwt: JwtService) { }
+
     /** Admin clients call this to receive admin-only events */
     @SubscribeMessage('join_admin')
-    onJoinAdmin(@ConnectedSocket() client: Socket) {
+    async onJoinAdmin(@ConnectedSocket() client: Socket) {
+        // Only authenticated admins may join the room that receives admin-only
+        // events (force-logout notices, account-unlock, etc.). Previously any
+        // anonymous client could join and eavesdrop on these.
+        const admin = await verifyAdminSocket(client, this.jwt);
+        if (!admin) {
+            client.emit('admin:unauthorized');
+            return;
+        }
         client.join('admin');
     }
 
