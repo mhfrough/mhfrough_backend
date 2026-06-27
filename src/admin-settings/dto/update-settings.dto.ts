@@ -130,6 +130,13 @@ export class UpdateSettingsDto {
     @Max(2000)
     aiMaxResponseLength?: number;
 
+    @ApiPropertyOptional({ minimum: 1, maximum: 15 })
+    @IsOptional()
+    @IsInt()
+    @Min(1)
+    @Max(15)
+    aiMaxQuestions?: number;
+
     // ── Deployment Health ──────────────────────────────────────────────────────
 
     @ApiPropertyOptional()
@@ -198,4 +205,79 @@ export class UpdateSettingsDto {
     @IsOptional()
     @IsBoolean()
     emailEnabled?: boolean;
+
+    // ── Visitor Authentication (OAuth) ────────────────────────────────────────
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsBoolean()
+    visitorAuthEnabled?: boolean;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsBoolean()
+    googleOAuthEnabled?: boolean;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(300)
+    googleClientId?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(300)
+    googleClientSecret?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsBoolean()
+    githubOAuthEnabled?: boolean;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(300)
+    githubClientId?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(300)
+    githubClientSecret?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsBoolean()
+    linkedinOAuthEnabled?: boolean;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(300)
+    linkedinClientId?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(300)
+    linkedinClientSecret?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsBoolean()
+    discordOAuthEnabled?: boolean;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(300)
+    discordClientId?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    @MaxLength(300)
+    discordClientSecret?: string;
 }

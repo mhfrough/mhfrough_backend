@@ -122,6 +122,47 @@ export class AdminSettings {
     @Column({ default: false })
     emailEnabled: boolean;
 
+    // ── Visitor Authentication (OAuth) ───────────────────────────────────────
+    /** Master switch: when false, all OAuth login routes reject immediately */
+    @Column({ default: false })
+    visitorAuthEnabled: boolean;
+
+    @Column({ default: false })
+    googleOAuthEnabled: boolean;
+
+    @Column({ nullable: true, type: 'varchar', length: 300 })
+    googleClientId: string | null;
+
+    @Column({ nullable: true, type: 'varchar', length: 300 })
+    googleClientSecret: string | null;
+
+    @Column({ default: false })
+    githubOAuthEnabled: boolean;
+
+    @Column({ nullable: true, type: 'varchar', length: 300 })
+    githubClientId: string | null;
+
+    @Column({ nullable: true, type: 'varchar', length: 300 })
+    githubClientSecret: string | null;
+
+    @Column({ default: false })
+    linkedinOAuthEnabled: boolean;
+
+    @Column({ nullable: true, type: 'varchar', length: 300 })
+    linkedinClientId: string | null;
+
+    @Column({ nullable: true, type: 'varchar', length: 300 })
+    linkedinClientSecret: string | null;
+
+    @Column({ default: false })
+    discordOAuthEnabled: boolean;
+
+    @Column({ nullable: true, type: 'varchar', length: 300 })
+    discordClientId: string | null;
+
+    @Column({ nullable: true, type: 'varchar', length: 300 })
+    discordClientSecret: string | null;
+
     @UpdateDateColumn()
     updatedAt: Date;
 }

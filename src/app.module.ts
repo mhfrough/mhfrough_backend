@@ -37,6 +37,7 @@ import { LeadsModule } from './leads/leads.module';
 import { EmailModule } from './email/email.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AdminDataModule } from './admin-data/admin-data.module';
+import { VisitorAuthModule } from './visitor-auth/visitor-auth.module';
 
 @Module({
   imports: [
@@ -98,6 +99,7 @@ import { AdminDataModule } from './admin-data/admin-data.module';
     EmailModule,
     AnalyticsModule,
     AdminDataModule,
+    VisitorAuthModule,
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',

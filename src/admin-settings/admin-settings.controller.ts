@@ -21,11 +21,12 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ActivityLogService } from '../activity-log/activity-log.service';
 import { EventsGateway } from '../events/events.gateway';
 
-const AI_FIELDS = new Set(['aiEnabled', 'aiTone', 'aiInstruction', 'aiAutoReplyDelay', 'aiMaxResponseLength', 'geminiApiKey']);
+const AI_FIELDS = new Set(['aiEnabled', 'aiTone', 'aiInstruction', 'aiAutoReplyDelay', 'aiMaxResponseLength', 'aiMaxQuestions', 'geminiApiKey']);
 const SECURITY_FIELDS = new Set(['enableInactivityLogout', 'inactivityTimeoutMinutes', 'enableLoginAttemptSuspend', 'maxLoginAttempts', 'lockDurationMinutes', 'rememberMeDays', 'sessionDurationDays']);
 const WIDGET_FIELDS = new Set(['weatherApiKey', 'goldApiKey', 'currencyApiKey', 'weatherCity']);
 const BRANDING_FIELDS = new Set(['copyrightOwner', 'footerTagline', 'showFooterTagline']);
 const EMAIL_FIELDS = new Set(['resendApiKey', 'emailFromAddress', 'emailFromName', 'emailEnabled']);
+const OAUTH_FIELDS = new Set(['visitorAuthEnabled', 'googleOAuthEnabled', 'googleClientId', 'googleClientSecret', 'githubOAuthEnabled', 'githubClientId', 'githubClientSecret', 'linkedinOAuthEnabled', 'linkedinClientId', 'linkedinClientSecret', 'discordOAuthEnabled', 'discordClientId', 'discordClientSecret']);
 
 @ApiTags('Admin Settings')
 @Controller('admin/settings')
@@ -53,6 +54,10 @@ export class AdminSettingsController {
             currencyApiKey: s.currencyApiKey ? '••••••••' : null,
             geminiApiKey: s.geminiApiKey ? '••••••••' : null,
             resendApiKey: s.resendApiKey ? '••••••••' : null,
+            googleClientSecret: s.googleClientSecret ? '••••••••' : null,
+            githubClientSecret: s.githubClientSecret ? '••••••••' : null,
+            linkedinClientSecret: s.linkedinClientSecret ? '••••••••' : null,
+            discordClientSecret: s.discordClientSecret ? '••••••••' : null,
         };
     }
 
@@ -147,6 +152,27 @@ export class AdminSettingsController {
                 description: `Email config updated: ${otherEmailChanged.join(', ')}`,
                 status: 'success',
                 metadata: Object.fromEntries(otherEmailChanged.map(k => [k, dto[k]])),
+            });
+        }
+
+        // Visitor auth master toggle
+        if ('visitorAuthEnabled' in dto) {
+            this.activityLog.log({
+                action: dto.visitorAuthEnabled ? 'settings:visitor_auth_enabled' : 'settings:visitor_auth_disabled',
+                resource: 'admin_settings',
+                description: `Visitor authentication ${dto.visitorAuthEnabled ? 'enabled' : 'disabled'}`,
+                status: 'success',
+            });
+        }
+
+        // OAuth provider secrets or toggles changed
+        const oauthChanged = changed.filter(k => OAUTH_FIELDS.has(k) && k !== 'visitorAuthEnabled');
+        if (oauthChanged.length) {
+            this.activityLog.log({
+                action: 'settings:oauth_updated',
+                resource: 'admin_settings',
+                description: `OAuth settings updated: ${oauthChanged.map(k => k.endsWith('Secret') ? `${k} ${(dto as any)[k] ? 'set' : 'cleared'}` : k).join(', ')}`,
+                status: 'success',
             });
         }
 
