@@ -30,6 +30,7 @@ import { GalleryModule } from './gallery/gallery.module';
 import { SiteSettingsModule } from './site-settings/site-settings.module';
 import { TickerModule } from './ticker/ticker.module';
 import { VisitorsModule } from './visitors/visitors.module';
+import { ToolsModule } from './tools/tools.module';
 import { WidgetsModule } from './widgets/widgets.module';
 import { HealthModule } from './health/health.module';
 import { AppointmentsModule } from './appointments/appointments.module';
@@ -92,6 +93,7 @@ import { VisitorAuthModule } from './visitor-auth/visitor-auth.module';
     SiteSettingsModule,
     TickerModule,
     VisitorsModule,
+    ToolsModule,
     WidgetsModule,
     HealthModule,
     AppointmentsModule,
